@@ -41,6 +41,17 @@ void SP_NKLog :: setLogPriName( int logPriName )
 	mIsLogPriName = logPriName;
 }
 
+void SP_NKLog :: init4test( const char *ident )
+{
+	int option = LOG_CONS | LOG_PID;
+
+#ifdef LOG_PERROR
+	option = option | LOG_PERROR;
+#endif
+
+	openlog( ident, option, LOG_USER );
+}
+
 const char * SP_NKLog :: getPriName( int pri )
 {
 	typedef struct tagPriName {

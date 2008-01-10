@@ -16,11 +16,7 @@
 
 int main( int argc, char * argv[] )
 {
-#ifdef LOG_PERROR
-	openlog( "testpop3cli_s", LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER );
-#else
-	openlog( "testpop3cli_s", LOG_CONS | LOG_PID, LOG_USER );
-#endif
+	SP_NKLog::init4test( "testpop3cli_s" );
 
 	const char * from = NULL, * pass = NULL, * host = NULL;
 

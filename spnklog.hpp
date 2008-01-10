@@ -30,6 +30,8 @@ public:
 	// default is enable
 	static void setLogPriName( int logPriName );
 
+	static void init4test( const char *ident );
+
 	/**
 	 * @param pri : syslog's priorities
 	 */
