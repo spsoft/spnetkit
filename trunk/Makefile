@@ -4,7 +4,7 @@
 CC = gcc
 AR = ar cru
 CFLAGS = -Wall -D_REENTRANT -D_GNU_SOURCE -g -fPIC
-SOFLAGS = -shared
+SOFLAGS = -shared -Wl,-h,$@
 LDFLAGS = -lstdc++
 
 LINKER = $(CC)
@@ -24,14 +24,15 @@ endif
 
 #--------------------------------------------------------------------
 
-LIBOBJS = spnklog.o spnkbase64.o spnksocket.o \
-		spnkutils.o spnkreader.o \
+LIBOBJS = spnklog.o spnkbase64.o spnkini.o \
+		spnksocket.o spnkutils.o spnkreader.o \
 		spnkpop3cli.o \
 		spnksmtpaddr.o spnksmtpcli.o
 
 SONAME = libspnetkit.so.$(version)
 
 TARGET =  libspnetkit.so \
+		testini \
 		testpop3cli \
 		testsmtpcli
 
@@ -56,6 +57,9 @@ $(SONAME): $(LIBOBJS)
 
 $(SONAME_S): spnksslsocket.o
 	$(LINKER) $(SOFLAGS) $^ -o $@
+
+testini: testini.o
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testpop3cli: testpop3cli.o
 	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@

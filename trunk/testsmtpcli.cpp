@@ -26,11 +26,7 @@ void printList( const char * type, SP_NKSmtpAddrList * list )
 
 int main( int argc, char * argv[] )
 {
-#ifdef LOG_PERROR
-	openlog( "testsmtpcli", LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER );
-#else
-	openlog( "testsmtpcli", LOG_CONS | LOG_PID, LOG_USER );
-#endif
+	SP_NKLog::init4test( "testsmtpcli" );
 
 	const char * from = NULL, * pass = NULL, * to = NULL, * host = NULL;
 
