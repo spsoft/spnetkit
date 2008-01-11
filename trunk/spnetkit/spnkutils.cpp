@@ -126,6 +126,15 @@ const char * SP_NKStringList :: getItem( int index ) const
 	return (char*)mList->getItem( index );
 }
 
+int SP_NKStringList :: remove( int index )
+{
+	char * item = takeItem( index );
+
+	if( NULL != item ) free( item );
+
+	return NULL == item ? -1 : 0;
+}
+
 char * SP_NKStringList :: takeItem( int index )
 {
 	return (char*)mList->takeItem( index );
