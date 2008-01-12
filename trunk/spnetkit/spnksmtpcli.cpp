@@ -12,7 +12,7 @@
 #include "spnksmtpcli.hpp"
 #include "spnksmtpaddr.hpp"
 
-#include "spnkutils.hpp"
+#include "spnklist.hpp"
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
 #include "spnkbase64.hpp"

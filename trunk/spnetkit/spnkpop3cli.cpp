@@ -10,7 +10,7 @@
 #include "spnkpop3cli.hpp"
 #include "spnklog.hpp"
 #include "spnksocket.hpp"
-#include "spnkutils.hpp"
+#include "spnklist.hpp"
 #include "spnkreader.hpp"
 
 SP_NKPop3Uid :: SP_NKPop3Uid( const char * uid, int seq )

@@ -41,11 +41,6 @@ public:
 
 	SP_NKSmtpAddrList * getErrorList();
 
-	static int openSocket( const char *ip, int port,
-			int timeout, const char * bindAddr );
-	static int socketConnect( int sockFd, const char * ip,
-			int port, int timeout );
-
 private:
 	static void processReply( SP_NKSmtpProtocol * protocol,
 			SP_NKSmtpAddrList * rcptList, SP_NKSmtpAddrList * retryList,

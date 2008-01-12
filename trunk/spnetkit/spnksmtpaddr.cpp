@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 #include "spnksmtpaddr.hpp"
-#include "spnkutils.hpp"
+#include "spnklist.hpp"
 
 SP_NKSmtpAddr :: SP_NKSmtpAddr( const char * addr )
 {
