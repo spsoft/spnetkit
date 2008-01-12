@@ -23,7 +23,7 @@ void showUsage( const char * program )
 
 	printf( "\t-h http host\n" );
 	printf( "\t-p http port\n" );
-	printf( "\t-r http method, only support POST & GET\n" );
+	printf( "\t-r http method, only support POST/GET/HEAD\n" );
 	printf( "\t-u http URI\n" );
 	printf( "\t-f the file for POST body, only need for POST\n" );
 	printf( "\t-o log socket io\n" );
@@ -100,12 +100,17 @@ int main( int argc, char * argv[] )
 		ret = SP_NKHttpProtocol::get( &socket, &request, &response );
 	} else if( request.isMethod( "POST" ) ) {
 		ret = SP_NKHttpProtocol::post( &socket, &request, &response );
+	} else if( request.isMethod( "HEAD" ) ) {
+		ret = SP_NKHttpProtocol::head( &socket, &request, &response );
 	} else {
 		printf( "unsupport method %s\n", request.getMethod() );
 	}
 
 	if( 0 == ret ) {
 		printf( "response:\n" );
+
+		printf( "%s %d %s\n", response.getVersion(), response.getStatusCode(),
+				response.getReasonPhrase() );
 
 		printf( "%d headers\n", response.getHeaderCount() );
 		for( int i = 0; i < response.getHeaderCount(); i++ ) {
