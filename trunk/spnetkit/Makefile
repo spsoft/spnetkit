@@ -1,26 +1,5 @@
 
-#--------------------------------------------------------------------
-
-CC = gcc
-AR = ar cru
-CFLAGS = -Wall -D_REENTRANT -D_GNU_SOURCE -g -fPIC
-SOFLAGS = -shared -Wl,-h,$@
-LDFLAGS = -lstdc++
-
-LINKER = $(CC)
-LINT = lint -c
-RM = /bin/rm -f
-
-ifeq ($(origin version), undefined)
-	version = 0.1
-endif
-
-OS=$(shell uname)
-
-ifeq ($(OS), SunOS)
-	LDFLAGS += -lnsl -lsocket
-	CFLAGS += -D_POSIX_THREAD_PROCESS_SHARED
-endif
+include ../port/port.mk
 
 #--------------------------------------------------------------------
 
@@ -43,6 +22,11 @@ SONAME_S = libspnetkit_s.so.$(version)
 TARGET_S = libspnetkit_s.so \
 		testpop3cli_s \
 		testsmtpcli_s
+
+OPENSSL_INCL = -I/usr/include/openssl/
+OPENSSL_LIB  = -L/usr/lib -lssl -lcrypto
+
+CFLAGS += $(OPENSSL_INCL)
 
 #--------------------------------------------------------------------
 
@@ -72,10 +56,10 @@ testsmtpcli: testsmtpcli.o
 	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testpop3cli_s: testpop3cli_s.o
-	$(LINKER) $(LDFLAGS) -o $@ $^ -L. -lspnetkit -lspnetkit_s -L/usr/lib -lssl -lcrypto
+	$(LINKER) $(LDFLAGS) -o $@ $^ -L. -lspnetkit -lspnetkit_s $(OPENSSL_LIB)
 
 testsmtpcli_s: testsmtpcli_s.o
-	$(LINKER) $(LDFLAGS) -o $@ $^ -L. -lspnetkit -lspnetkit_s -L/usr/lib -lssl -lcrypto
+	$(LINKER) $(LDFLAGS) -o $@ $^ -L. -lspnetkit -lspnetkit_s $(OPENSSL_LIB)
 
 testhttpcli: testhttpcli.o
 	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
@@ -90,13 +74,4 @@ spnetkit-$(version).src.tar.gz:
 
 clean:
 	@( $(RM) *.o vgcore.* core core.* $(TARGET) $(TARGET_S) $(SONAME) $(SONAME_S) )
-
-#--------------------------------------------------------------------
-
-# make rule
-%.o : %.c
-	$(CC) $(CFLAGS) -c $^ -o $@	
-
-%.o : %.cpp
-	$(CC) $(CFLAGS) -c $^ -o $@	
 
