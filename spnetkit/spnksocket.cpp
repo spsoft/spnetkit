@@ -48,8 +48,10 @@ int SP_NKSocket :: poll( int fd, int events, int * revents, int timeout )
 
 	*revents = pfd.revents;
 
-	SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket::poll( fd=%i, events=%i, revents=%i, time=%d )=%i",
-			fd, events, *revents, timeout, ret );
+	if( mLogSocketDefault ) {
+		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket::poll( fd=%i, events=%i, revents=%i, time=%d )=%i",
+				fd, events, *revents, timeout, ret );
+	}
 
 	return ret;
 }

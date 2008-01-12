@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "spnkutils.hpp"
+#include "spnklist.hpp"
 
 const int SP_NKVector::LAST_INDEX = -1;
 

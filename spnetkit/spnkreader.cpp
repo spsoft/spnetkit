@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "spnkreader.hpp"
-#include "spnkutils.hpp"
+#include "spnklist.hpp"
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
 

@@ -11,7 +11,7 @@
 #include "spnkpop3cli.hpp"
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
-#include "spnkutils.hpp"
+#include "spnklist.hpp"
 
 int main( int argc, char * argv[] )
 {

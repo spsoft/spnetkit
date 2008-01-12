@@ -8,7 +8,7 @@
 #include <syslog.h>
 
 #include "spnkini.hpp"
-#include "spnkutils.hpp"
+#include "spnklist.hpp"
 #include "spnklog.hpp"
 
 int main( int argc, char * argv[] )

@@ -15,8 +15,9 @@
 #include <ctype.h>
 
 #include "spnkini.hpp"
-#include "spnkutils.hpp"
+#include "spnklist.hpp"
 #include "spnklog.hpp"
+#include "spnkfile.hpp"
 
 SP_NKIniFile :: SP_NKIniFile()
 {
@@ -31,44 +32,17 @@ SP_NKIniFile :: ~SP_NKIniFile()
 
 int SP_NKIniFile :: open( const char * file )
 {
-	int ret = -1;
+	SP_NKFileReader fileReader;
 
-	int fd = ::open( file, O_RDONLY );
-	if( fd >= 0 ) {
-		struct stat fileStat;
-		if( 0 == fstat( fd, &fileStat ) ) {
-			char * buff = (char*)malloc( fileStat.st_size + 1 );
-			if( NULL != buff ) {
-				if( read( fd, buff, fileStat.st_size ) == fileStat.st_size ) {
-					buff[ fileStat.st_size ] = '\0';
+	int ret = fileReader.read( file );
+	if( 0 == ret ) {
+		for( const char * pos = fileReader.getBuffer(); NULL != pos; ) {
+			const char * end = strchr( pos, '\n' );
+			if( NULL == end ) end = strchr( pos, '\0' );
+			mFile->append( pos, end - pos + 1 );
 
-					ret = 0;
-
-					for( char * pos = buff; NULL != pos; ) {
-						char * end = strchr( pos, '\n' );
-						if( NULL == end ) end = strchr( pos, '\0' );
-						mFile->append( pos, end - pos + 1 );
-
-						pos = ( '\0' == *end ? NULL : end + 1 );
-					}
-				} else {
-					SP_NKLog::log( LOG_WARNING, "WARN: read( ..., %li ) fail, errno %d, %s",
-						fileStat.st_size, errno, strerror( errno ) );
-				}
-				free( buff );
-			} else {
-				SP_NKLog::log( LOG_WARNING, "WARN: malloc( %li ) fail, errno %d, %s",
-						fileStat.st_size, errno, strerror( errno ) );
-			}
-		} else {
-			SP_NKLog::log( LOG_WARNING, "WARN: stat %s fail, errno %d, %s",
-					file, errno, strerror( errno ) );
+			pos = ( '\0' == *end ? NULL : end + 1 );
 		}
-
-		close( fd );
-	} else {
-		SP_NKLog::log( LOG_WARNING, "WARN: open %s fail, errno %d, %s",
-				file, errno, strerror( errno ) );
 	}
 
 	return ret;

@@ -3,8 +3,8 @@
  * For license terms, see the file COPYING along with this library.
  */
 
-#ifndef __spnkutils_hpp__
-#define __spnkutils_hpp__
+#ifndef __spnklist_hpp__
+#define __spnklist_hpp__
 
 class SP_NKVector {
 public:
