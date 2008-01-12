@@ -1,0 +1,40 @@
+			 spnetkit README
+
+1.Introduction
+
+spnetkit is a C++ wrapper for BSD-style sockets. It implements the
+TCP, UDP, SSL transport layer protocols. Implemented application layer
+protocols are HTTP client, SMTP client, POP3 client. Features include
+inifile reader, base64 codec.
+
+The spnetkit code was developed under Linux, but has also been tested
+under Solaris.
+
+You can get the code from the spnetkit home page:
+
+	http://code.google.com/p/spnetkit/
+
+2.Building
+
+To build libspnetkit.so, type
+
+$ cd spnetkit
+$ make
+
+This will build all the targets include examples. 
+
+Before building libspnetkit_s.so, OpenSSL must been installed.
+Edit spnetkit/Makefile to specify the path of openssl:
+
+	OPENSSL_INCL = -I<path_to_openssl_include>
+	OPENSSL_LIB  = -L<path_to_openssl_library> -lssl -lcrypto
+
+$ make ssl
+
+
+Reports of successful use of spnetkit are appreciated.
+
+Enjoy!
+
+				-- stephen liu <stephen.nil@gmail.com>
+
