@@ -12,7 +12,7 @@ LINT = lint -c
 RM = /bin/rm -f
 
 ifeq ($(origin version), undefined)
-	version = 0.1
+	version = 0.1.1
 endif
 
 OS=$(shell uname)
