@@ -15,6 +15,7 @@
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
 #include "spnktime.hpp"
+#include "spnklist.hpp"
 
 void normalTest( const char * host, int port )
 {
@@ -23,10 +24,10 @@ void normalTest( const char * host, int port )
 	SP_NKMemProtocol protocol( &socket );
 
 	char version[ 128 ] = { 0 };
-	int ret = protocol.version( version, sizeof( version ) );
-
-	printf( "version = %d\n", ret );
-	printf( "%s\n", version );
+	{
+		assert( 0 == protocol.version( version, sizeof( version ) ) );
+		printf( "version %s\n", version );
+	}
 
 	{
 		SP_NKMemItem item;
@@ -34,61 +35,75 @@ void normalTest( const char * host, int port )
 		item.setFlags( 1234 );
 		item.setDataBlock( strdup( "100" ) );
 
-		ret = protocol.stor( "set", &item );
-		printf( "stor = %d\n", ret );
+		assert( 0 == protocol.stor( "set", &item ) );
+
+		printf( "set -- lerr %d\n", protocol.getLastError() );
 	}
 
 	{
 		SP_NKMemItem item;
-		ret = protocol.retr( "testkey", &item );
-		printf( "retr = %d\n", ret );
+		assert( 0 == protocol.retr( "testkey", &item ) );
+
+		printf( "get -- lerr %d\n", protocol.getLastError() );
 
 		item.dump();
 	}
 
 	{
 		int value = 0;
-		ret = protocol.incr( "testkey", 1, &value );
-		printf( "incr = %d\n", ret );
+		assert( 0 == protocol.incr( "testkey", 1, &value ) );
+		printf( "incr -- lerr %d\n", protocol.getLastError() );
 		printf( "new.value = %d\n", value );
 	}
 
 	{
 		int value = 0;
-		ret = protocol.decr( "testkey", 1, &value );
-		printf( "decr = %d\n", ret );
+		assert( 0 == protocol.decr( "testkey", 1, &value ) );
+		printf( "decr -- lerr %d\n", protocol.getLastError() );
 		printf( "new.value = %d\n", value );
 	}
 
-	{
+	if( strcasecmp( version, "1.2.4" ) >= 0 ) {
+		SP_NKStringList keyList;
+		SP_NKMemItemList itemList;
+
+		keyList.append( "testkey" );
+		keyList.append( "testkey0" );
+		keyList.append( "testkey1" );
+
+		// since memcached 1.2.4
+		assert( 0 == protocol.retr( &keyList, &itemList ) );
+		printf( "gets -- lerr %d\n", protocol.getLastError() );
+		itemList.dump();
+
 		SP_NKMemItem item;
-
-		protocol.retr( "testkey", &item );
-
+		item.setKey( itemList.getItem(0)->getKey() );
+		item.setCasUnique( itemList.getItem(0)->getCasUnique() );
+		item.setFlags( itemList.getItem(0)->getFlags() );
 		item.setDataBlock( strdup( "200" ) );
 
-		ret = protocol.stor( "cas", &item );
-		printf( "cas = %d, last.err = %d\n", ret, protocol.getLastError() );
+		assert( 0 == protocol.stor( "cas", &item ) );
+		printf( "cas -- lerr = %d\n", protocol.getLastError() );
 
-		ret = protocol.retr( "testkey", &item );
-		printf( "retr = %d\n", ret );
+		assert( 0 == protocol.retr( "testkey", &item ) );
+		printf( "get -- lerr = %d\n", protocol.getLastError() );
 		item.dump();
+	} else {
+		printf( "gets/cas operations are not supported by mamcached %s\n", version );
 	}
 
 	{
-		//ret = protocol.dele( "testkey" );
-		printf( "dele = %d\n", ret );
+		assert( 0 == protocol.dele( "testkey" ) );
+		printf( "dele -- lerr %d\n", protocol.getLastError() );
 
 		SP_NKMemItem item;
-		ret = protocol.retr( "testkey", &item );
-		printf( "retr = %d\n", ret );
-		item.dump();
+		assert( 0 == protocol.retr( "testkey", &item ) );
+		printf( "retr -- lerr %d\n", protocol.getLastError() );
 	}
 
 	{
 		SP_NKMemStat stat;
-		ret = protocol.stat( &stat );
-		printf( "stat = %d\n", ret );
+		assert( 0 == protocol.stat( &stat ) );
 
 		stat.dump();
 	}
@@ -182,7 +197,7 @@ int main( int argc, char * argv[] )
 
 	printf( "retr %d items ok, use %ld ms\n", loops, clock.getInterval() );
 
-	//normalTest( "127.0.0.1", 11211 );
+	normalTest( host, port );
 
 	protocol.quit();
 

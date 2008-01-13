@@ -37,23 +37,42 @@ public:
 		eServerError = 99,
 	};
 
-	// @return 0 : socket ok, -1 : socket error
+	// retrieve the result of the last operation
+	int getLastError() const;
+
+	// retrieve the last line which reply from server
+	const char * getLastReply() const;
+
+	/**
+	 * @return 0 : socket ok, -1 : socket error
+	 * @note caller need call getLastError to get the result of the operation,
+	 *       the return value of this function is only indicate the socket status
+	 */
 	int stor( const char * cmd, SP_NKMemItem * item );
 
 	// @return 0 : socket ok, -1 : socket error
 	int retr( const char * key, SP_NKMemItem * item );
 
+	// @return 0 : socket ok, -1 : socket error
 	int retr( SP_NKStringList * keyList, SP_NKMemItemList * itemList );
 
+	// @return 0 : socket ok, -1 : socket error
 	int dele( const char * key );
-	int incr( const char * key, int value, int * newValue );
-	int decr( const char * key, int value, int * newValue );
-	int stat( SP_NKMemStat * stat );
-	int version( char * buff, size_t len );
-	int quit();
 
-	const char * getLastReply() const;
-	int getLastError() const;
+	// @return 0 : socket ok, -1 : socket error
+	int incr( const char * key, int value, int * newValue );
+
+	// @return 0 : socket ok, -1 : socket error
+	int decr( const char * key, int value, int * newValue );
+
+	// @return 0 : socket ok, -1 : socket error
+	int stat( SP_NKMemStat * stat );
+
+	// @return 0 : socket ok, -1 : socket error
+	int version( char * buff, size_t len );
+
+	// @return 0 : socket ok, -1 : socket error
+	int quit();
 
 private:
 	static int isCaseStartsWith( const char * s1, const char * s2 );
@@ -102,6 +121,8 @@ private:
 	time_t mExptime;
 	int mFlags;
 	uint64_t mCasUnique;
+
+	SP_NKMemItem & operator=( const SP_NKMemItem & other );
 };
 
 class SP_NKMemItemList {

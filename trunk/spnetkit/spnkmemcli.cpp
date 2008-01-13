@@ -303,6 +303,8 @@ int SP_NKMemProtocol :: stor( const char * cmd, SP_NKMemItem * item )
 {
 	int ret = -1;
 
+	mLastError = eError;
+
 	int cmdlen = 0;
 	char cmdline[ 1024 ] = { 0 };
 
@@ -354,6 +356,7 @@ int SP_NKMemProtocol :: retr( const char * key, SP_NKMemItem * item )
 
 				//VALUE <key> <flags> <bytes>\r\n
 				//<data block>\r\n
+				//END
 
 				int scanRet = sscanf( mLastReply, "%*s %250s %u %d\n", tmpKey, &flags, &bytes );
 
@@ -361,11 +364,12 @@ int SP_NKMemProtocol :: retr( const char * key, SP_NKMemItem * item )
 					item->setKey( tmpKey );
 					item->setFlags( flags );
 
-					char * dataBlock = (char*)malloc( bytes + 1 );
-					dataBlock[ bytes ] = '\0';
+					char * dataBlock = (char*)malloc( bytes + 3 );
+					*dataBlock = '\0';
 					item->setDataBlock( dataBlock, bytes );
 
-					if( (int)bytes == mSocket->readn( dataBlock, bytes ) ) {
+					if( (int)( bytes + 2 ) == mSocket->readn( dataBlock, bytes + 2 ) ) {
+						dataBlock[ bytes ] = '\0';
 						if( mSocket->readline( mLastReply, sizeof( mLastReply ) ) > 0 ) {
 							ret = 0;
 							if( isCaseStartsWith( mLastReply, "END" ) ) mLastError = eSuccess;
@@ -403,19 +407,9 @@ int SP_NKMemProtocol :: retr( SP_NKStringList * keyList, SP_NKMemItemList * item
 				//VALUE <key> <flags> <bytes> [<cas unique>]\r\n
 				//<data block>\r\n
 
-				int spaceCount = 0;
-				for( char * it = mLastReply; '\0' != *it; it++ ) {
-					if( isspace( *it ) ) spaceCount++;
-				}
+				int scanRet = sscanf( mLastReply, "%*s %250s %u %d %lld\n", key, &flags, &bytes, &casUnique );
 
-				int scanRet = 0;
-				if( 3 == spaceCount ) {
-					scanRet = sscanf( mLastReply, "%*s %250s %u %d\n", key, &flags, &bytes );
-				} else if( 4 == spaceCount ) {
-					scanRet = sscanf( mLastReply, "%*s %250s %u %d %lld\n", key, &flags, &bytes, &casUnique );
-				}
-
-				if( spaceCount == scanRet && '\0' != key[0] ) {
+				if( 4 == scanRet && '\0' != key[0] ) {
 					SP_NKMemItem * item = new SP_NKMemItem( key );
 					item->setFlags( flags );
 					item->setCasUnique( casUnique );
@@ -449,6 +443,8 @@ int SP_NKMemProtocol :: dele( const char * key )
 {
 	int ret = -1;
 
+	mLastError = eError;
+
 	if( mSocket->printf( "delete %s 0\r\n", key ) > 0 ) {
 		if( mSocket->readline( mLastReply, sizeof( mLastReply ) ) > 0 ) {
 			mLastError = str2enum( mLastReply );
@@ -462,6 +458,8 @@ int SP_NKMemProtocol :: dele( const char * key )
 int SP_NKMemProtocol :: incr( const char * key, int value, int * newValue )
 {
 	int ret = -1;
+
+	mLastError = eError;
 
 	if( mSocket->printf( "incr %s %d\r\n", key, value ) > 0 ) {
 		if( mSocket->readline( mLastReply, sizeof( mLastReply ) ) > 0 ) {
@@ -482,6 +480,8 @@ int SP_NKMemProtocol :: decr( const char * key, int value, int * newValue )
 {
 	int ret = -1;
 
+	mLastError = eError;
+
 	if( mSocket->printf( "decr %s %d\r\n", key, value ) > 0 ) {
 		if( mSocket->readline( mLastReply, sizeof( mLastReply ) ) > 0 ) {
 			ret = 0;
@@ -500,6 +500,8 @@ int SP_NKMemProtocol :: decr( const char * key, int value, int * newValue )
 int SP_NKMemProtocol :: stat( SP_NKMemStat * stat )
 {
 	int ret = -1;
+
+	mLastError = eError;
 
 	if( mSocket->printf( "stats\r\n" ) > 0 ) {
 		for( ; ; ) {
@@ -531,8 +533,15 @@ int SP_NKMemProtocol :: version( char * buff, size_t len )
 {
 	int ret = -1;
 
+	mLastError = eError;
+
 	if( mSocket->printf( "version\r\n" ) > 0 ) {
-		if( mSocket->readline( buff, len ) > 0 ) {
+		if( mSocket->readline( mLastReply, sizeof( mLastReply ) ) > 0 ) {
+			const char * pos = strchr( mLastReply, ' ' );
+			if( NULL != pos ) {
+				strncpy( buff, pos + 1, len );
+				buff[ len - 1 ] = '\0';
+			}
 			mLastError = eSuccess;
 			ret = 0;
 		}
@@ -544,6 +553,8 @@ int SP_NKMemProtocol :: version( char * buff, size_t len )
 int SP_NKMemProtocol :: quit()
 {
 	int ret = -1;
+
+	mLastError = eError;
 
 	if( mSocket->printf( "quit\r\n" ) > 0 ) {
 		mLastError = eSuccess;
