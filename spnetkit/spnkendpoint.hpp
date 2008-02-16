@@ -7,6 +7,7 @@
 #define __spnkendpoint_hpp__
 
 #include <time.h>
+#include <stdint.h>
 
 class SP_NKVector;
 
@@ -39,26 +40,34 @@ private:
 	SP_NKVector * mList;
 };
 
+typedef struct tagSP_NKEndPointBucket {
+	uint32_t mKeyMin, mKeyMax;
+	SP_NKEndPointList * mList;
+} SP_NKEndPointBucket_t;
+
 class SP_NKEndPointTable {
 public:
-	SP_NKEndPointTable();
+	SP_NKEndPointTable( uint32_t tableKeyMax );
 	~SP_NKEndPointTable();
 
 	int getCount() const;
 
-	/// get list by index
-	SP_NKEndPointList * getList( int index ) const;
+	/// get bucket by index
+	const SP_NKEndPointBucket_t * getBucket( int index ) const;
 
 	/// get list by key
-	SP_NKEndPointList * getRegion( int key ) const;
+	SP_NKEndPointList * getList( uint32_t key ) const;
 
 	/// get random endpoint by key & weight
-	const SP_NKEndPoint_t * getRandomEndPoint( int key ) const;
+	const SP_NKEndPoint_t * getRandomEndPoint( uint32_t key ) const;
 
-	void addRegion( int keyMin, int keyMax, SP_NKEndPointList * list );
+	void addBucket( uint32_t keyMin, uint32_t keyMax, SP_NKEndPointList * list );
+
+	uint32_t getTableKeyMax();
 
 private:
 	SP_NKVector * mList;
+	uint32_t mTableKeyMax;
 };
 
 #endif

@@ -9,247 +9,207 @@
 #include <stdio.h>
 
 #include "spnkmemcli.hpp"
+#include "spnkmemobj.hpp"
 
 #include "spnksocket.hpp"
+#include "spnkendpoint.hpp"
+#include "spnksocketpool.hpp"
 #include "spnklist.hpp"
+#include "spnkstr.hpp"
+#include "spnklog.hpp"
 
-SP_NKMemItem :: SP_NKMemItem( const char * key )
+#include "spnkhash.hpp"
+
+SP_NKMemClient :: SP_NKMemClient( SP_NKEndPointTable * table, HashFunc_t hashFunc )
 {
-	init();
-	setKey( key );
+	mEndPointTable = table;
+	mHashFunc = hashFunc;
+	if( 0 == mHashFunc ) mHashFunc = SP_NKHash::crc32;
+
+	mSocketPool = NULL;
 }
 
-SP_NKMemItem :: SP_NKMemItem()
+SP_NKMemClient :: ~SP_NKMemClient()
 {
-	init();
+	delete mEndPointTable;
+	mEndPointTable = NULL;
+
+	if( NULL != mSocketPool ) delete mSocketPool;
+	mSocketPool = NULL;
 }
 
-SP_NKMemItem :: ~SP_NKMemItem()
+void SP_NKMemClient :: setSocketPool( SP_NKSocketPool * socketPool )
 {
-	if( NULL != mKey ) free( mKey );
-	mKey = NULL;
-
-	if( NULL != mDataBlock ) free( mDataBlock );
-	mDataBlock = NULL;
+	mSocketPool = socketPool;
 }
 
-void SP_NKMemItem :: init()
+SP_NKSocket * SP_NKMemClient :: getSocket( const char * key )
 {
-	mKey = NULL;
+	SP_NKSocket * socket = NULL;
 
-	mDataBlock = NULL;
-	mDataBytes = 0;
-	mExptime = 0;
-	mFlags = 0;
-	mCasUnique = 0;
+	uint32_t keyHash = mHashFunc( key, strlen( key ) );
+
+	SP_NKEndPointList * list = mEndPointTable->getList( keyHash );
+	if( NULL != list ) {
+		const SP_NKEndPoint_t * ep = list->getEndPoint( 0 );
+		if( NULL != ep ) {
+			socket = mSocketPool->get( ep->mIP, ep->mPort );
+		} else {
+			SP_NKLog::log( LOG_WARNING, "Cannot found endpoint for %s, %d", key, keyHash );
+		}
+	} else {
+		SP_NKLog::log( LOG_WARNING, "Cannot found endpointlist for %s, %d", key, keyHash );
+	}
+
+	return socket;
 }
 
-SP_NKMemItem & SP_NKMemItem :: operator=( SP_NKMemItem & other )
+bool SP_NKMemClient :: stor( const char * cmd, SP_NKMemItem * item )
 {
-	if( NULL != mKey ) free( mKey );
-	if( NULL != mDataBlock ) free( mDataBlock );
+	bool ret = false;
 
-	init();
-
-	setKey( other.getKey() );
-	setFlags( other.getFlags() );
-	setExptime( other.getExptime() );
-	setCasUnique( other.getCasUnique() );
-
-	size_t dataBytes = 0;
-	void * dataBlock = other.takeDataBlock( &dataBytes );
-	setDataBlock( dataBlock, dataBytes );
-
-	return *this;
-}
-
-void SP_NKMemItem :: setKey( const char * key )
-{
-	if( NULL != mKey ) free( mKey );
-	mKey = strdup( key );
-}
-
-const char * SP_NKMemItem :: getKey() const
-{
-	return mKey;
-}
-
-void SP_NKMemItem :: setDataBlock( void * dataBlock, size_t dataBytes )
-{
-	if( NULL != mDataBlock ) free( mDataBlock );
-
-	mDataBlock = dataBlock;
-	mDataBytes = dataBytes;
-	if( mDataBytes <= 0 ) mDataBytes = strlen( (char*)mDataBlock );
-}
-
-void * SP_NKMemItem :: getDataBlock() const
-{
-	return mDataBlock;
-}
-
-size_t SP_NKMemItem :: getDataBytes() const
-{
-	return mDataBytes;
-}
-
-void * SP_NKMemItem :: takeDataBlock( size_t * dataBytes )
-{
-	* dataBytes = mDataBytes;
-
-	void * ret = mDataBlock;
-	mDataBlock = NULL;
-
-	return ret;
-}
-
-void SP_NKMemItem :: setExptime( time_t exptime )
-{
-	mExptime = exptime;
-}
-
-time_t SP_NKMemItem :: getExptime() const
-{
-	return mExptime;
-}
-
-void SP_NKMemItem :: setFlags( int flags )
-{
-	mFlags = flags;
-}
-
-int SP_NKMemItem :: getFlags() const
-{
-	return mFlags;
-}
-
-void SP_NKMemItem :: setCasUnique( uint64_t casUnique )
-{
-	mCasUnique = casUnique;
-}
-
-uint64_t SP_NKMemItem :: getCasUnique() const
-{
-	return mCasUnique;
-}
-
-void SP_NKMemItem :: dump() const
-{
-	printf( "VALUE %s %u %ld %d %lld\n", mKey ? mKey : "",
-			mFlags, mExptime, mDataBytes, mCasUnique );
-}
-
-//===================================================================
-
-SP_NKMemItemList :: SP_NKMemItemList()
-{
-	mList = new SP_NKVector();
-}
-
-SP_NKMemItemList :: ~SP_NKMemItemList()
-{
-	clean();
-
-	delete mList;
-	mList = NULL;
-}
-
-int SP_NKMemItemList :: getCount() const
-{
-	return mList->getCount();
-}
-
-void SP_NKMemItemList :: append( SP_NKMemItem * item )
-{
-	mList->append( item );
-}
-
-const SP_NKMemItem * SP_NKMemItemList :: getItem( int index ) const
-{
-	return (SP_NKMemItem*)mList->getItem( index );
-}
-
-SP_NKMemItem * SP_NKMemItemList :: takeItem( int index )
-{
-	return (SP_NKMemItem*)mList->takeItem( index );
-}
-
-int SP_NKMemItemList :: deleteItem( int index )
-{
-	int ret = -1;
-
-	SP_NKMemItem * item = (SP_NKMemItem*)mList->takeItem( index );
-	if( NULL != item ) {
-		ret = 0;
-		delete item;
+	SP_NKSocket * socket = getSocket( item->getKey() );
+	if( NULL != socket ) {
+		SP_NKMemProtocol protocol( socket );
+		if( 0 == protocol.stor( cmd, item ) ) {
+			if( SP_NKMemProtocol::eStored == protocol.getLastError() ) ret = true;
+			mSocketPool->save( socket );
+		} else {
+			delete socket;
+		}
 	}
 
 	return ret;
 }
 
-int SP_NKMemItemList :: findByKey( const char * key ) const
+bool SP_NKMemClient :: retr( const char * key, SP_NKMemItem * item )
 {
-	for( int i = 0; i < mList->getCount(); i++ ) {
-		const SP_NKMemItem * item = getItem( i );
-		if( 0 == strcmp( item->getKey(), key ) ) return i;
+	bool ret = false;
+
+	SP_NKSocket * socket = getSocket( key );
+	if( NULL != socket ) {
+		SP_NKMemProtocol protocol( socket );
+		if( 0 == protocol.retr( key, item ) ) {
+			if( SP_NKMemProtocol::eSuccess == protocol.getLastError() ) ret = true;
+			mSocketPool->save( socket );
+		} else {
+			delete socket;
+		}
 	}
 
-	return -1;
+	return ret;
 }
 
-void SP_NKMemItemList :: clean()
+bool SP_NKMemClient :: retr( SP_NKStringList * keyList, SP_NKMemItemList * itemList )
 {
-	for( ; mList->getCount() > 0; ) {
-		deleteItem( mList->getCount() - 1 );
+	typedef struct tagEP2KeyList {
+		const SP_NKEndPoint_t * mEndPoint;
+		SP_NKStringList mKeyList;
+	} EP2KeyList_t;
+
+	SP_NKVector keyListMap; /// group by endpoint
+
+	for( int i = 0; i < keyList->getCount(); i++ ) {
+		const char * key = keyList->getItem( i );
+
+		uint32_t keyHash = mHashFunc( key, strlen( key ) );
+		SP_NKEndPointList * list = mEndPointTable->getList( keyHash );
+		if( NULL != list ) {
+			const SP_NKEndPoint_t * ep = list->getEndPoint( 0 );
+			if( NULL != ep ) {
+				EP2KeyList_t * ep2keylist = NULL;
+				for( int j = 0; j < keyListMap.getCount(); j++ ) {
+					EP2KeyList_t * iter = (EP2KeyList_t*)keyListMap.getItem( j );
+					if( iter->mEndPoint == ep ) {
+						ep2keylist = iter;
+						break;
+					}
+				}
+				if( NULL == ep2keylist ) {
+					ep2keylist = (EP2KeyList_t*)malloc( sizeof( EP2KeyList_t ) );
+					ep2keylist->mEndPoint = ep;
+					keyListMap.append( ep2keylist );
+				}
+				ep2keylist->mKeyList.append( key );
+			}
+		}
 	}
-}
 
-void SP_NKMemItemList :: dump() const
-{
-	for( int i = 0; i < mList->getCount(); i++ ) {
-		getItem(i)->dump();
+	for( int i = 0; i < keyListMap.getCount(); i++ ) {
+		EP2KeyList_t * iter = (EP2KeyList_t*)keyListMap.getItem( i );
+
+		SP_NKSocket * socket = mSocketPool->get( iter->mEndPoint->mIP, iter->mEndPoint->mPort );
+		if( NULL != socket ) {
+			SP_NKMemProtocol protocol( socket );
+
+			if( 0 == protocol.retr( &( iter->mKeyList ), itemList ) ) {
+				mSocketPool->save( socket );
+			} else {
+				delete socket;
+			}
+		}
 	}
-}
 
-//===================================================================
-
-SP_NKMemStat :: SP_NKMemStat()
-{
-	mName = new SP_NKStringList();
-	mValue = new SP_NKStringList();
-}
-
-SP_NKMemStat :: ~SP_NKMemStat()
-{
-	delete mName;
-	mName = NULL;
-
-	delete mValue;
-	mValue = NULL;
-}
-
-const SP_NKStringList * SP_NKMemStat :: getNameList()
-{
-	return mName;
-}
-
-const char * SP_NKMemStat :: getValue( const char * name )
-{
-	int index  = mName->seek( name );
-	return mValue->getItem( index );
-}
-
-void SP_NKMemStat :: append( const char * name, const char * value )
-{
-	mName->append( name );
-	mValue->append( value );
-}
-
-void SP_NKMemStat :: dump() const
-{
-	for( int i = 0; i < mName->getCount(); i++ ) {
-		printf( "STAT %s %s\n", mName->getItem(i), mValue->getItem(i) );
+	for( int i = 0; i < keyListMap.getCount(); i++ ) {
+		EP2KeyList_t * iter = (EP2KeyList_t*)keyListMap.getItem( i );
+		free( iter );
 	}
+
+	return true;
+}
+
+bool SP_NKMemClient :: dele( const char * key )
+{
+	bool ret = false;
+
+	SP_NKSocket * socket = getSocket( key );
+	if( NULL != socket ) {
+		SP_NKMemProtocol protocol( socket );
+		if( 0 == protocol.dele( key ) ) {
+			if( SP_NKMemProtocol::eDeleted == protocol.getLastError() ) ret = true;
+			mSocketPool->save( socket );
+		} else {
+			delete socket;
+		}
+	}
+
+	return ret;
+}
+
+bool SP_NKMemClient :: incr( const char * key, int value, int * newValue )
+{
+	bool ret = false;
+
+	SP_NKSocket * socket = getSocket( key );
+	if( NULL != socket ) {
+		SP_NKMemProtocol protocol( socket );
+		if( 0 == protocol.incr( key, value, newValue ) ) {
+			if( SP_NKMemProtocol::eSuccess == protocol.getLastError() ) ret = true;
+			mSocketPool->save( socket );
+		} else {
+			delete socket;
+		}
+	}
+
+	return ret;
+}
+
+bool SP_NKMemClient :: decr( const char * key, int value, int * newValue )
+{
+	bool ret = false;
+
+	SP_NKSocket * socket = getSocket( key );
+	if( NULL != socket ) {
+		SP_NKMemProtocol protocol( socket );
+		if( 0 == protocol.decr( key, value, newValue ) ) {
+			if( SP_NKMemProtocol::eSuccess == protocol.getLastError() ) ret = true;
+			mSocketPool->save( socket );
+		} else {
+			delete socket;
+		}
+	}
+
+	return ret;
 }
 
 //===================================================================
@@ -538,10 +498,7 @@ int SP_NKMemProtocol :: version( char * buff, size_t len )
 	if( mSocket->printf( "version\r\n" ) > 0 ) {
 		if( mSocket->readline( mLastReply, sizeof( mLastReply ) ) > 0 ) {
 			const char * pos = strchr( mLastReply, ' ' );
-			if( NULL != pos ) {
-				strncpy( buff, pos + 1, len );
-				buff[ len - 1 ] = '\0';
-			}
+			if( NULL != pos ) SP_NKStr::strlcpy( buff, pos + 1, len );
 			mLastError = eSuccess;
 			ret = 0;
 		}

@@ -57,17 +57,19 @@ void testList()
 
 void testTable()
 {
-	SP_NKEndPointTable table;
+	const static int TABLE_KEY_MAX = 20;
+
+	SP_NKEndPointTable table( TABLE_KEY_MAX );
 
 	SP_NKEndPointList * list = new SP_NKEndPointList();
 	list->addEndPoint( "127.0.0.1", 11211, 10 );
 
-	table.addRegion( 0, 9, list );
+	table.addBucket( 0, 9, list );
 
 	list = new SP_NKEndPointList();
 	list->addEndPoint( "127.0.0.1", 11212, 10 );
 
-	table.addRegion( 10, 19, list );
+	table.addBucket( 10, 19, list );
 
 	const SP_NKEndPoint_t * endpoint = table.getRandomEndPoint( 5 );
 	printf( "%s, %d\n", endpoint->mIP, endpoint->mPort );

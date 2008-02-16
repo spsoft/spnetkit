@@ -22,6 +22,9 @@ int main( int argc, char * argv[] )
 
 	assert( -1 == pool.save( s2 ) );
 
+	s2 = pool.get( "127.0.0.1", 11211 );
+	assert( s1 == s2 );
+
 	return 0;
 }
 

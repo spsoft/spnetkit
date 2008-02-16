@@ -8,6 +8,7 @@
 
 #include "spnksmtpaddr.hpp"
 #include "spnklist.hpp"
+#include "spnkstr.hpp"
 
 SP_NKSmtpAddr :: SP_NKSmtpAddr( const char * addr )
 {
@@ -16,22 +17,19 @@ SP_NKSmtpAddr :: SP_NKSmtpAddr( const char * addr )
 	memset( mAddr, 0, sizeof( mAddr ) );
 	memset( mErrMsg, 0, sizeof( mErrMsg ) );
 
-	strncpy( mAddr, addr, sizeof( mAddr ) - 1 );
-	strncpy( mName, addr, sizeof( mName ) - 1 );
+	SP_NKStr::strlcpy( mAddr, addr, sizeof( mAddr ) );
+	SP_NKStr::strlcpy( mName, addr, sizeof( mName ) );
 	char * pos = strchr( mName, '@' );
 	if( NULL != pos ) {
 		* pos = '\0';
-		strncpy( mDomain, pos + 1, sizeof( mDomain ) - 1 );
+		SP_NKStr::strlcpy( mDomain, pos + 1, sizeof( mDomain ) );
 	}
 }
 
 SP_NKSmtpAddr :: SP_NKSmtpAddr( const char * name, const char * domain )
 {
-	strncpy( mName, name, sizeof( mName ) - 1 );
-	mName[ sizeof( mName ) - 1  ] = '\0';
-
-	strncpy( mDomain, domain, sizeof( mDomain ) - 1 );
-	mDomain[ sizeof( mDomain ) - 1 ] = '\0';
+	SP_NKStr::strlcpy( mName, name, sizeof( mName ) );
+	SP_NKStr::strlcpy( mDomain, domain, sizeof( mDomain ) );
 
 	snprintf( mAddr, sizeof( mAddr ), "%s@%s", name, domain );
 
@@ -59,7 +57,7 @@ int SP_NKSmtpAddr :: isDomain( const char * domain ) const
 
 void SP_NKSmtpAddr :: setErrMsg( const char * errmsg )
 {
-	strncpy( mErrMsg, errmsg, sizeof( mErrMsg ) - 1 );
+	SP_NKStr::strlcpy( mErrMsg, errmsg, sizeof( mErrMsg ) );
 	for( char * pos = mErrMsg; '\0' != *pos; pos++ ) {
 		if( '\r' == *pos || '\n' == *pos ) *pos = ' ';
 	}

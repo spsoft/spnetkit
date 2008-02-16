@@ -83,6 +83,24 @@ void SP_NKVector :: clean()
 	mCount = 0;
 }
 
+void SP_NKVector :: sort( int ( * cmpFunc )( const void *, const void * ) )
+{
+	for( int i = 0; i < mCount - 1; i++ ) {
+		int min = i;
+		for( int j = i + 1; j < mCount; j++ ) {
+			if( cmpFunc( mFirst[ min ], mFirst[ j ] ) > 0 ) {
+				min = j;
+			}
+		}
+
+		if( min != i ) {
+			void * temp = mFirst[ i ];
+			mFirst[ i ] = mFirst[ min ];
+			mFirst[ min ] = temp;
+		}
+	}
+}
+
 //=============================================================================
 
 SP_NKStringList :: SP_NKStringList()
