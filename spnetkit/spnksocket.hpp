@@ -38,6 +38,10 @@ public:
 
 	const char * getPeerHost();
 
+	int getPeerPort();
+
+	time_t getLastActiveTime();
+
 	/**
 	 * @return -1 : error, and errno is set appropriately
 	 * @return > 0 : recv bytes, include trailing '\n' or '\r\n'
@@ -100,11 +104,14 @@ private:
 	int mSocketFd;
 	int mToBeOwner;
 	char mPeerName[ 64 ];
+	int mPeerPort;
 
 	char mBuffer[ 8192 ];
 	size_t mBufferLen;
 
 	int mSocketTimeout;
+
+	time_t mLastActiveTime;
 
 	int mLogSocket;
 };

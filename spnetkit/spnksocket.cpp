@@ -66,10 +66,14 @@ SP_NKSocket :: SP_NKSocket()
 	memset( mPeerName, 0, sizeof( mPeerName ) );
 	strncpy( mPeerName, "unknown", sizeof( mPeerName ) - 1 );
 
+	mPeerPort = 0;
+
 	memset( mBuffer, 0, sizeof( mBuffer ) );
 	mBufferLen = 0;
 
 	mLogSocket = mLogSocketDefault;
+
+	time( &mLastActiveTime );
 }
 
 void SP_NKSocket :: init( int socketFd, int toBeOwner )
@@ -82,6 +86,7 @@ void SP_NKSocket :: init( int socketFd, int toBeOwner )
 		if( 0 == getpeername( mSocketFd, (struct sockaddr*)&addr, &addrLen ) ) {
 			const unsigned char *p = ( const unsigned char *) &( addr.sin_addr );
 			snprintf( mPeerName, sizeof( mPeerName ), "%i.%i.%i.%i", p[0], p[1], p[2], p[3] );
+			mPeerPort = addr.sin_port;
 		}
 	}
 
@@ -125,6 +130,16 @@ int SP_NKSocket :: getSocketFd()
 const char * SP_NKSocket :: getPeerHost()
 {
 	return mPeerName;
+}
+
+int SP_NKSocket :: getPeerPort()
+{
+	return mPeerPort;
+}
+
+time_t SP_NKSocket :: getLastActiveTime()
+{
+	return mLastActiveTime;
 }
 
 int SP_NKSocket :: readline( char * buffer, size_t len )
@@ -196,6 +211,8 @@ int SP_NKSocket :: readline( char * buffer, size_t len )
 				mSocketFd, __func__, buffer, len, retLen );
 	}
 
+	time( &mLastActiveTime );
+
 	return retLen;
 }
 
@@ -215,6 +232,8 @@ int SP_NKSocket :: readn( void * buffer, size_t len )
 			break;
 		}
 	}
+
+	time( &mLastActiveTime );
 
 	return retLen;
 }
@@ -267,6 +286,8 @@ int SP_NKSocket :: read( void * buffer, size_t len )
 				mSocketFd, __func__, len, retLen );
 	}
 
+	time( &mLastActiveTime );
+
 	return retLen;
 }
 
@@ -300,6 +321,8 @@ int SP_NKSocket :: printf( const char * format, ... )
 
 		free( buffer );
 	}
+
+	time( &mLastActiveTime );
 
 	return retLen;
 }
@@ -345,6 +368,8 @@ int SP_NKSocket :: writen( const void * buffer, size_t len )
 				mSocketFd, __func__, len, retLen );
 	}
 
+	time( &mLastActiveTime );
+
 	return retLen;
 }
 
@@ -365,6 +390,8 @@ int SP_NKSocket :: probe( void * buffer, size_t len )
 			mBufferLen += bufferLen;
 		}
 	}
+
+	time( &mLastActiveTime );
 
 	return retLen;
 }
