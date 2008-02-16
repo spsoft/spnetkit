@@ -16,6 +16,7 @@
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
 #include "spnkbase64.hpp"
+#include "spnkstr.hpp"
 
 SP_NKSmtpClient :: SP_NKSmtpClient( const char * from, const char * data )
 	: mFrom( from ), mData( data )
@@ -63,8 +64,8 @@ void SP_NKSmtpClient :: setTimeout( int connectTimeout, int socketTimeout )
 
 void SP_NKSmtpClient :: setAuth( const char * username, const char * password )
 {
-	strncpy( mUsername, username, sizeof( mUsername ) - 1 );
-	strncpy( mPassword, password, sizeof( mPassword ) - 1 );
+	SP_NKStr::strlcpy( mUsername, username, sizeof( mUsername ) );
+	SP_NKStr::strlcpy( mPassword, password, sizeof( mPassword ) );
 }
 
 void SP_NKSmtpClient :: setRelayBindAddr( const char * relayBindAddr )

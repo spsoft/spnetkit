@@ -10,143 +10,106 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "spnkmemcli.hpp"
-#include "spnksocket.hpp"
-#include "spnklog.hpp"
-#include "spnktime.hpp"
+#include "spnkmemobj.hpp"
+
+#include "spnkini.hpp"
 #include "spnklist.hpp"
+#include "spnkendpoint.hpp"
+#include "spnksocketpool.hpp"
+#include "spnkstr.hpp"
+#include "spnklog.hpp"
+#include "spnksocket.hpp"
+#include "spnktime.hpp"
 
-void normalTest( const char * host, int port )
+SP_NKMemClient * InitMemClient( const char * config )
 {
-	SP_NKTcpSocket socket( host, port );
+	SP_NKEndPointTable * table = NULL;
+	SP_NKSocketPool * socketPool = NULL;
 
-	SP_NKMemProtocol protocol( &socket );
+	SP_NKIniFile ini;
+	if( 0 == ini.open( config ) ) {
+		const char * secName = "SocketPool";
 
-	char version[ 128 ] = { 0 };
-	{
-		assert( 0 == protocol.version( version, sizeof( version ) ) );
-		printf( "version %s\n", version );
-	}
+		int connectTimeout = ini.getValueAsInt( secName, "ConnectTimeout" );
+		int socketTimeout = ini.getValueAsInt( secName, "SocketTimeout" );
+		int maxIdlePerEndPoint = ini.getValueAsInt( secName, "MaxIdlePerEndPoint" );
+		int maxIdleTime = ini.getValueAsInt( secName, "MaxIdleTime" );
 
-	{
-		SP_NKMemItem item;
-		item.setKey( "testkey" );
-		item.setFlags( 1234 );
-		item.setDataBlock( strdup( "100" ) );
+		SP_NKTcpSocketFactory * factory = new SP_NKTcpSocketFactory();
+		factory->setTimeout( connectTimeout, socketTimeout );
+		socketPool = new SP_NKSocketPool( maxIdlePerEndPoint, new SP_NKTcpSocketFactory() );
+		socketPool->setMaxIdleTime( maxIdleTime );
 
-		assert( 0 == protocol.stor( "set", &item ) );
+		secName = "EndPointTable";
 
-		printf( "set -- lerr %d\n", protocol.getLastError() );
-	}
+		int tableKeyMax = ini.getValueAsInt( secName, "TableKeyMax" );
+		table = new SP_NKEndPointTable( tableKeyMax );
 
-	{
-		SP_NKMemItem item;
-		assert( 0 == protocol.retr( "testkey", &item ) );
-
-		printf( "get -- lerr %d\n", protocol.getLastError() );
-
-		item.dump();
-	}
-
-	{
-		int value = 0;
-		assert( 0 == protocol.incr( "testkey", 1, &value ) );
-		printf( "incr -- lerr %d\n", protocol.getLastError() );
-		printf( "new.value = %d\n", value );
-	}
-
-	{
-		int value = 0;
-		assert( 0 == protocol.decr( "testkey", 1, &value ) );
-		printf( "decr -- lerr %d\n", protocol.getLastError() );
-		printf( "new.value = %d\n", value );
-	}
-
-	if( strcasecmp( version, "1.2.4" ) >= 0 ) {
+		// read Server[N]
 		SP_NKStringList keyList;
-		SP_NKMemItemList itemList;
+		ini.getKeyNameList( secName, &keyList );
 
-		keyList.append( "testkey" );
-		keyList.append( "testkey0" );
-		keyList.append( "testkey1" );
+		for( int i = 0; i < keyList.getCount(); i++ ) {
+			const char * key = keyList.getItem( i );
 
-		// since memcached 1.2.4
-		assert( 0 == protocol.retr( &keyList, &itemList ) );
-		printf( "gets -- lerr %d\n", protocol.getLastError() );
-		itemList.dump();
+			if( key == strstr( key, "Server" ) ) {
+				char value[ 256 ] = { 0 };
+				ini.getValue( secName, key, value, sizeof( value ) );
+				if( '\0' != value[0] ) {
+					// "keyMin-keyMax" ip:port
 
-		SP_NKMemItem item;
-		item.setKey( itemList.getItem(0)->getKey() );
-		item.setCasUnique( itemList.getItem(0)->getCasUnique() );
-		item.setFlags( itemList.getItem(0)->getFlags() );
-		item.setDataBlock( strdup( "200" ) );
+					SP_NKEndPointList * list = new SP_NKEndPointList();
+					{
+						char * endpoint = value;
+						SP_NKStr::strsep( &endpoint, " " );
 
-		assert( 0 == protocol.stor( "cas", &item ) );
-		printf( "cas -- lerr = %d\n", protocol.getLastError() );
+						char * port = endpoint;
+						SP_NKStr::strsep( &port, ":" );
 
-		assert( 0 == protocol.retr( "testkey", &item ) );
-		printf( "get -- lerr = %d\n", protocol.getLastError() );
-		item.dump();
+						for( ; '\0' != *endpoint && isspace( *endpoint ); ) endpoint++;
+						list->addEndPoint( endpoint, atoi( port ), 10 );
+					}
 
-		assert( 0 == protocol.stor( "append", &item ) );
-		printf( "append -- lerr = %d\n", protocol.getLastError() );
+					char * keyMax = value;
+					SP_NKStr::strsep( &keyMax, "-" );
 
-		assert( 0 == protocol.retr( "testkey", &item ) );
-		printf( "get -- lerr = %d\n", protocol.getLastError() );
-		item.dump();
+					int iKeyMin = atoi( value + 1 );
+					int iKeyMax = atoi( keyMax );
 
-		assert( 0 == protocol.stor( "prepend", &item ) );
-		printf( "append -- lerr = %d\n", protocol.getLastError() );
-
-		assert( 0 == protocol.retr( "testkey", &item ) );
-		printf( "get -- lerr = %d\n", protocol.getLastError() );
-		item.dump();
-	} else {
-		printf( "gets/cas operations are not supported by mamcached %s\n", version );
+					table->addBucket( iKeyMin, iKeyMax, list );
+				}
+			}
+		}
 	}
 
-	{
-		//assert( 0 == protocol.dele( "testkey" ) );
-		printf( "dele -- lerr %d\n", protocol.getLastError() );
+	SP_NKMemClient * memClient = new SP_NKMemClient( table );
+	memClient->setSocketPool( socketPool );
 
-		SP_NKMemItem item;
-		assert( 0 == protocol.retr( "testkey", &item ) );
-		printf( "retr -- lerr %d\n", protocol.getLastError() );
-	}
-
-	{
-		SP_NKMemStat stat;
-		assert( 0 == protocol.stat( &stat ) );
-
-		stat.dump();
-	}
-
-	protocol.quit();
+	return memClient;
 }
 
 void showUsage( const char * program )
 {
-	printf( "Usage: %s [-h <host>] [-p <port>] [-l <loops>] [-v]\n", program );
+	printf( "Usage: %s [-f config] [-l <loops>] [-v]\n", program );
 }
 
 int main( int argc, char * argv[] )
 {
 	assert ( sigset ( SIGPIPE, SIG_IGN ) != SIG_ERR ) ;
 
-	const char * host = "127.0.0.1";
-	int port = 11211, loops = 100;
+	const char * config = "testmemcli.ini";
+	int loops = 100;
 
 	extern char *optarg ;
 	int c ;
 
-	while( ( c = getopt ( argc, argv, "h:p:l:ov" )) != EOF ) {
+	while( ( c = getopt ( argc, argv, "c:l:ov" )) != EOF ) {
 		switch ( c ) {
-			case 'h' :
-				host = optarg;
-				break;
-			case 'p' :
-				port = atoi( optarg );
+			case 'c':
+				config = optarg;
 				break;
 			case 'l':
 				loops = atoi( optarg );
@@ -164,16 +127,9 @@ int main( int argc, char * argv[] )
 
 	SP_NKLog::setLogLevel( LOG_INFO );
 
-	printf( "Connect to %s:%d, loops %d\n", host, port, loops );
+	printf( "Use config %s\n", config );
 
-	SP_NKTcpSocket socket( host, port );
-	if( socket.getSocketFd() < 0 ) {
-		printf( "Connect to %s:%d fail\n", host, port );
-		showUsage( argv[0] );
-		exit( -1 );
-	}
-
-	SP_NKMemProtocol protocol( &socket );
+	SP_NKMemClient * memClient = InitMemClient( config );
 
 	char key[ 128 ] = { 0 };
 
@@ -192,7 +148,7 @@ int main( int argc, char * argv[] )
 				"so we only use it for very large objects.  "
 				"I have not done any heavy benchmarking recently" ) );
 
-		if( 0 != protocol.stor( "set", &item ) ) {
+		if( ! memClient->stor( "set", &item ) ) {
 			printf( "fail on loop#%d\n", i );
 			exit( 0 );
 		}
@@ -203,19 +159,13 @@ int main( int argc, char * argv[] )
 	for( int i = 0; i < loops; i++ ) {
 		snprintf( key, sizeof( key ), "testkey%d", i );
 
-		if( 0 != protocol.retr( key, &item ) ) {
+		if( ! memClient->retr( key, &item ) ) {
 			printf( "fail on loop#%d\n", i );
 			exit( 0 );
 		}
 	}
 
 	printf( "retr %d items ok, use %ld ms\n", loops, clock.getInterval() );
-
-	normalTest( host, port );
-
-	protocol.quit();
-
-	closelog();
 
 	return 0;
 }

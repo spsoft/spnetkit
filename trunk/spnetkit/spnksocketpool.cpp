@@ -5,12 +5,14 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "spnksocketpool.hpp"
 
 #include "spnksocket.hpp"
 #include "spnklist.hpp"
 #include "spnklog.hpp"
+#include "spnkstr.hpp"
 
 SP_NKSocketFactory :: ~SP_NKSocketFactory()
 {
@@ -79,6 +81,11 @@ SP_NKSocketPool :: ~SP_NKSocketPool()
 	mList = NULL;
 }
 
+void SP_NKSocketPool :: setMaxIdleTime( int maxIdleTime )
+{
+	mMaxIdleTime = maxIdleTime;
+}
+
 SP_NKSocketPool::Entry_t * SP_NKSocketPool :: getEntry( const char * ip, int port )
 {
 	for( int i = 0; i < mList->getCount(); i++ ) {
@@ -102,7 +109,7 @@ SP_NKSocket * SP_NKSocketPool :: get( const char * ip, int port, int forceNew, i
 		Entry_t * entry = getEntry( ip, port );
 		if( NULL != entry ) {
 			for( ; NULL == ret && entry->mList->getCount() > 0; ) {
-				ret = (SP_NKSocket*)mList->takeItem( SP_NKVector::LAST_INDEX );
+				ret = (SP_NKSocket*)entry->mList->takeItem( SP_NKVector::LAST_INDEX );
 
 				if( mMaxIdleTime > 0 && ( time( NULL ) - ret->getLastActiveTime() ) > mMaxIdleTime ) {
 					delete ret;
@@ -131,8 +138,7 @@ int SP_NKSocketPool :: save( SP_NKSocket * socket )
 	Entry_t * entry = getEntry( socket->getPeerHost(), socket->getPeerPort() );
 	if( NULL == entry ) {
 		entry = (Entry_t*)malloc( sizeof( Entry_t ) );
-		strncpy( entry->mIP, socket->getPeerHost(), sizeof( entry->mIP ) );
-		entry->mIP[ sizeof( entry->mIP ) - 1 ] = '\0';
+		SP_NKStr::strlcpy( entry->mIP, socket->getPeerHost(), sizeof( entry->mIP ) );
 		entry->mPort = socket->getPeerPort();
 		entry->mList = new SP_NKVector();
 

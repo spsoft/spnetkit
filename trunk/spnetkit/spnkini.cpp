@@ -18,6 +18,7 @@
 #include "spnklist.hpp"
 #include "spnklog.hpp"
 #include "spnkfile.hpp"
+#include "spnkstr.hpp"
 
 SP_NKIniFile :: SP_NKIniFile()
 {
@@ -54,8 +55,7 @@ void SP_NKIniFile :: getSectionNameList( SP_NKStringList * list ) const
 
 	for( int i = 0; i < mFile->getCount(); i++ ) {
 		if( '[' == *( mFile->getItem(i) ) ) {
-			strncpy( section, mFile->getItem(i) + 1, sizeof( section ) );
-			section[ sizeof( section ) - 1 ] = '\0';
+			SP_NKStr::strlcpy( section, mFile->getItem(i) + 1, sizeof( section ) );
 
 			char * pos = strchr( section, ']' );
 			if( NULL != pos ) {
@@ -132,8 +132,7 @@ const char * SP_NKIniFile :: getValue( const char * section, const char * key,
 					// remove leading space
 					for( pos++; isspace( *pos ); ) pos++;
 
-					strncpy( value, pos, size );
-					value[ size - 1 ] = '\0';
+					SP_NKStr::strlcpy( value, pos, size );
 
 					// remove tailing comment
 					for( pos = value; '\0' != *pos; pos++ ) {

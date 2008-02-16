@@ -10,6 +10,8 @@ class SP_NKStr {
 public:
 	static char * strsep( char ** stringp, const char * delim );
 
+	static size_t strlcpy( char *dst, const char *src, size_t dst_sz );
+
 private:
 	SP_NKStr();
 };

@@ -19,6 +19,7 @@
 
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
+#include "spnkstr.hpp"
 
 int SP_NKSocket :: mLogSocketDefault = 0;
 
@@ -64,7 +65,7 @@ SP_NKSocket :: SP_NKSocket()
 	mSocketTimeout = DEFAULT_SOCKET_TIMEOUT;
 
 	memset( mPeerName, 0, sizeof( mPeerName ) );
-	strncpy( mPeerName, "unknown", sizeof( mPeerName ) - 1 );
+	SP_NKStr::strlcpy( mPeerName, "unknown", sizeof( mPeerName ) );
 
 	mPeerPort = 0;
 
@@ -86,7 +87,7 @@ void SP_NKSocket :: init( int socketFd, int toBeOwner )
 		if( 0 == getpeername( mSocketFd, (struct sockaddr*)&addr, &addrLen ) ) {
 			const unsigned char *p = ( const unsigned char *) &( addr.sin_addr );
 			snprintf( mPeerName, sizeof( mPeerName ), "%i.%i.%i.%i", p[0], p[1], p[2], p[3] );
-			mPeerPort = addr.sin_port;
+			mPeerPort = ntohs( addr.sin_port );
 		}
 	}
 

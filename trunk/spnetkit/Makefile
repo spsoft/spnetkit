@@ -4,13 +4,13 @@ include ../port/port.mk
 #--------------------------------------------------------------------
 
 LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
-		spnktime.o \
+		spnktime.o spnkhash.o \
 		spnksocket.o spnklist.o spnkreader.o \
 		spnkendpoint.o spnksocketpool.o \
 		spnkpop3cli.o \
 		spnksmtpaddr.o spnksmtpcli.o \
 		spnkhttpmsg.o spnkhttpcli.o \
-		spnkmemcli.o
+		spnkmemobj.o spnkmemcli.o
 
 SONAME = libspnetkit.so.$(version)
 
@@ -19,6 +19,7 @@ TARGET =  libspnetkit.so \
 		testpop3cli \
 		testsmtpcli \
 		testhttpcli \
+		testmemproto \
 		testmemcli \
 		testendpoint \
 		testsocketpool
@@ -68,6 +69,9 @@ testsmtpcli_s: testsmtpcli_s.o
 	$(LINKER) $(LDFLAGS) -o $@ $^ -L. -lspnetkit -lspnetkit_s $(OPENSSL_LIB)
 
 testhttpcli: testhttpcli.o
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
+
+testmemproto: testmemproto.o
 	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testmemcli: testmemcli.o

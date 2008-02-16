@@ -12,11 +12,11 @@
 #include "spnksocket.hpp"
 #include "spnklist.hpp"
 #include "spnkreader.hpp"
+#include "spnkstr.hpp"
 
 SP_NKPop3Uid :: SP_NKPop3Uid( const char * uid, int seq )
 {
-	strncpy( mUid, uid, sizeof( mUid ) );
-	mUid[ sizeof( mUid ) - 1 ] = '\0';
+	SP_NKStr::strlcpy( mUid, uid, sizeof( mUid ) );
 	mSeq = seq;
 	mSize = 0;
 }
@@ -166,8 +166,7 @@ int SP_NKPop3Client :: getNewUidList( SP_NKStringList * ignoreList, SP_NKPop3Uid
 
 		for( const char * iter = strBuf; NULL != iter; ) {
 			char line[ 256 ] = { 0 };
-			strncpy( line, iter, sizeof( line ) - 1 );
-			line[ sizeof( line ) - 1 ] = '\0';
+			SP_NKStr::strlcpy( line, iter, sizeof( line ) );
 
 			if( '.' == line[0] ) break;
 
@@ -204,8 +203,7 @@ int SP_NKPop3Client :: getAllUidList( SP_NKPop3UidList * uidList )
 
 		for( const char * iter = strBuf; NULL != iter; ) {
 			char line[ 256 ] = { 0 };
-			strncpy( line, iter, sizeof( line ) - 1 );
-			line[ sizeof( line ) - 1 ] = '\0';
+			SP_NKStr::strlcpy( line, iter, sizeof( line ) );
 
 			if( '.' == line[0] ) break;
 
@@ -240,8 +238,7 @@ int SP_NKPop3Client :: fillMailSize( SP_NKPop3UidList * uidList )
 
 		for( const char * iter = strBuf; NULL != iter; ) {
 			char line[ 256 ] = { 0 };
-			strncpy( line, iter, sizeof( line ) - 1 );
-			line[ sizeof( line ) - 1 ] = '\0';
+			SP_NKStr::strlcpy( line, iter, sizeof( line ) );
 
 			if( '.' == line[0] ) break;
 

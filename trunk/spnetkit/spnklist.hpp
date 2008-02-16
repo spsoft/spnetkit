@@ -19,6 +19,8 @@ public:
 	void * takeItem( int index );
 	void clean();
 
+	void sort( int ( * cmpFunc )( const void *, const void * ) );
+
 private:
 	SP_NKVector( SP_NKVector & );
 	SP_NKVector & operator=( SP_NKVector & );

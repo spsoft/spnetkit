@@ -10,6 +10,7 @@
 #include "spnkendpoint.hpp"
 
 #include "spnklist.hpp"
+#include "spnkstr.hpp"
 
 SP_NKEndPointList :: SP_NKEndPointList()
 {
@@ -74,8 +75,7 @@ void SP_NKEndPointList :: addEndPoint( const char * ip, int port, int weight )
 {
 	SP_NKEndPoint_t * endpoint = (SP_NKEndPoint_t*)malloc( sizeof( SP_NKEndPoint_t ) );
 
-	strncpy( endpoint->mIP, ip, sizeof( endpoint->mIP ) );
-	endpoint->mIP[ sizeof( endpoint->mIP ) - 1 ] = '\0';
+	SP_NKStr::strlcpy( endpoint->mIP, ip, sizeof( endpoint->mIP ) );
 	endpoint->mPort = port;
 	endpoint->mWeight = weight;
 	endpoint->mEnableTime = 0;
@@ -107,20 +107,16 @@ void SP_NKEndPointList :: markStart( const char * ip, int port )
 
 //===================================================================
 
-typedef struct tagSP_NKEndPointRegion {
-	int mKeyMin, mKeyMax;
-	SP_NKEndPointList * mList;
-} SP_NKEndPointRegion_t;
-
-SP_NKEndPointTable :: SP_NKEndPointTable()
+SP_NKEndPointTable :: SP_NKEndPointTable( uint32_t tableKeyMax )
 {
 	mList = new SP_NKVector();
+	mTableKeyMax = tableKeyMax;
 }
 
 SP_NKEndPointTable :: ~SP_NKEndPointTable()
 {
 	for( int i = 0; i < mList->getCount(); i++ ) {
-		SP_NKEndPointRegion_t * iter = (SP_NKEndPointRegion_t*)mList->getItem( i );
+		SP_NKEndPointBucket_t * iter = (SP_NKEndPointBucket_t*)mList->getItem( i );
 		free( iter );
 	}
 
@@ -133,17 +129,17 @@ int SP_NKEndPointTable :: getCount() const
 	return mList->getCount();
 }
 
-SP_NKEndPointList * SP_NKEndPointTable :: getList( int index ) const
+const SP_NKEndPointBucket_t * SP_NKEndPointTable :: getBucket( int index ) const
 {
-	SP_NKEndPointRegion_t * iter = (SP_NKEndPointRegion_t*)mList->getItem( index );
-
-	return NULL == iter ? NULL : iter->mList;
+	return (SP_NKEndPointBucket_t*)mList->getItem( index );
 }
 
-SP_NKEndPointList * SP_NKEndPointTable :: getRegion( int key ) const
+SP_NKEndPointList * SP_NKEndPointTable :: getList( uint32_t key ) const
 {
+	key = key % mTableKeyMax;
+
 	for( int i = 0; i < mList->getCount(); i++ ) {
-		SP_NKEndPointRegion_t * iter = (SP_NKEndPointRegion_t*)mList->getItem( i );
+		SP_NKEndPointBucket_t * iter = (SP_NKEndPointBucket_t*)mList->getItem( i );
 
 		if( iter->mKeyMin <= key && key <= iter->mKeyMax ) {
 			return iter->mList;
@@ -153,21 +149,26 @@ SP_NKEndPointList * SP_NKEndPointTable :: getRegion( int key ) const
 	return NULL;
 }
 
-const SP_NKEndPoint_t * SP_NKEndPointTable :: getRandomEndPoint( int key ) const
+const SP_NKEndPoint_t * SP_NKEndPointTable :: getRandomEndPoint( uint32_t key ) const
 {
-	SP_NKEndPointList * list = getRegion( key );
+	SP_NKEndPointList * list = getList( key );
 
 	return NULL == list ? NULL : list->getRandomEndPoint();
 }
 
-void SP_NKEndPointTable :: addRegion( int keyMin, int keyMax, SP_NKEndPointList * list )
+void SP_NKEndPointTable :: addBucket( uint32_t keyMin, uint32_t keyMax, SP_NKEndPointList * list )
 {
-	SP_NKEndPointRegion_t * region =
-			(SP_NKEndPointRegion_t*)malloc( sizeof( SP_NKEndPointRegion_t ) );
-	region->mKeyMin = keyMin;
-	region->mKeyMax = keyMax;
-	region->mList = list;
+	SP_NKEndPointBucket_t * bucket =
+			(SP_NKEndPointBucket_t*)malloc( sizeof( SP_NKEndPointBucket_t ) );
+	bucket->mKeyMin = keyMin;
+	bucket->mKeyMax = keyMax;
+	bucket->mList = list;
 
-	mList->append( region );
+	mList->append( bucket );
+}
+
+uint32_t SP_NKEndPointTable :: getTableKeyMax()
+{
+	return mTableKeyMax;
 }
 
