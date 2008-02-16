@@ -88,12 +88,26 @@ void normalTest( const char * host, int port )
 		assert( 0 == protocol.retr( "testkey", &item ) );
 		printf( "get -- lerr = %d\n", protocol.getLastError() );
 		item.dump();
+
+		assert( 0 == protocol.stor( "append", &item ) );
+		printf( "append -- lerr = %d\n", protocol.getLastError() );
+
+		assert( 0 == protocol.retr( "testkey", &item ) );
+		printf( "get -- lerr = %d\n", protocol.getLastError() );
+		item.dump();
+
+		assert( 0 == protocol.stor( "prepend", &item ) );
+		printf( "append -- lerr = %d\n", protocol.getLastError() );
+
+		assert( 0 == protocol.retr( "testkey", &item ) );
+		printf( "get -- lerr = %d\n", protocol.getLastError() );
+		item.dump();
 	} else {
 		printf( "gets/cas operations are not supported by mamcached %s\n", version );
 	}
 
 	{
-		assert( 0 == protocol.dele( "testkey" ) );
+		//assert( 0 == protocol.dele( "testkey" ) );
 		printf( "dele -- lerr %d\n", protocol.getLastError() );
 
 		SP_NKMemItem item;
