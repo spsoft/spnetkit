@@ -40,7 +40,7 @@ SP_NKMemClient * InitMemClient( const char * config )
 
 		SP_NKTcpSocketFactory * factory = new SP_NKTcpSocketFactory();
 		factory->setTimeout( connectTimeout, socketTimeout );
-		socketPool = new SP_NKSocketPool( maxIdlePerEndPoint, new SP_NKTcpSocketFactory() );
+		socketPool = new SP_NKSocketPool( maxIdlePerEndPoint, factory );
 		socketPool->setMaxIdleTime( maxIdleTime );
 
 		secName = "EndPointTable";
@@ -165,7 +165,36 @@ int main( int argc, char * argv[] )
 		}
 	}
 
-	printf( "retr %d items ok, use %ld ms\n", loops, clock.getInterval() );
+	printf( "retr %d/1 items ok, use %ld ms\n", loops, clock.getInterval() );
+
+	for( int i = 0; i < loops; i += 100 ) {
+		SP_NKStringList keyList;
+		for( int j = 0; j < 100; j++ ) {
+			snprintf( key, sizeof( key ), "testkey%d", i + j );
+			keyList.append( key );
+		}
+
+		SP_NKMemItemList itemList;
+		if( ! memClient->retr( &keyList, &itemList ) ) {
+			printf( "fail on loop#%d\n", i );
+			exit( 0 );
+		}
+
+		assert( keyList.getCount() == itemList.getCount() );
+	}
+
+	printf( "retr %d/100 items ok, use %ld ms\n", loops, clock.getInterval() );
+
+	SP_NKMemStatList statList;
+	memClient->stat( &statList );
+
+	for( int i = 0; i < statList.getCount(); i++ ) {
+		const SP_NKMemStat * stat = statList.getItem( i );
+		printf( "%s:%d curr_items %s\n", stat->getIP(), stat->getPort(),
+				stat->getValue( "curr_items" ) );
+	}
+
+	delete memClient;
 
 	return 0;
 }

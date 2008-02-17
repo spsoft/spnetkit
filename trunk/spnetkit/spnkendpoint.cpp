@@ -117,6 +117,7 @@ SP_NKEndPointTable :: ~SP_NKEndPointTable()
 {
 	for( int i = 0; i < mList->getCount(); i++ ) {
 		SP_NKEndPointBucket_t * iter = (SP_NKEndPointBucket_t*)mList->getItem( i );
+		delete iter->mList;
 		free( iter );
 	}
 
@@ -138,11 +139,18 @@ SP_NKEndPointList * SP_NKEndPointTable :: getList( uint32_t key ) const
 {
 	key = key % mTableKeyMax;
 
-	for( int i = 0; i < mList->getCount(); i++ ) {
-		SP_NKEndPointBucket_t * iter = (SP_NKEndPointBucket_t*)mList->getItem( i );
+	// binary search
+	for( int begin = 0, end = mList->getCount(); begin < end; ) {
+		int curr = ( end + begin ) >> 1;
+
+		SP_NKEndPointBucket_t * iter = (SP_NKEndPointBucket_t*)mList->getItem( curr );
 
 		if( iter->mKeyMin <= key && key <= iter->mKeyMax ) {
 			return iter->mList;
+		} else if( key < iter->mKeyMin ) {
+			end = curr;
+		} else {
+			begin = curr + 1;
 		}
 	}
 
@@ -156,6 +164,17 @@ const SP_NKEndPoint_t * SP_NKEndPointTable :: getRandomEndPoint( uint32_t key ) 
 	return NULL == list ? NULL : list->getRandomEndPoint();
 }
 
+int SP_NKEndPointTable :: cmpBucket( const void * item1, const void * item2 )
+{
+	SP_NKEndPointBucket_t * b1 = (SP_NKEndPointBucket_t*)item1;
+	SP_NKEndPointBucket_t * b2 = (SP_NKEndPointBucket_t*)item2;
+
+	if( b1->mKeyMin < b2->mKeyMin ) return -1;
+	if( b1->mKeyMin > b2->mKeyMin ) return 1;
+
+	return 0;
+}
+
 void SP_NKEndPointTable :: addBucket( uint32_t keyMin, uint32_t keyMax, SP_NKEndPointList * list )
 {
 	SP_NKEndPointBucket_t * bucket =
@@ -165,6 +184,8 @@ void SP_NKEndPointTable :: addBucket( uint32_t keyMin, uint32_t keyMax, SP_NKEnd
 	bucket->mList = list;
 
 	mList->append( bucket );
+
+	mList->sort( cmpBucket );
 }
 
 uint32_t SP_NKEndPointTable :: getTableKeyMax()

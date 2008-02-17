@@ -11,6 +11,7 @@
 #include "spnkmemobj.hpp"
 
 #include "spnklist.hpp"
+#include "spnkstr.hpp"
 
 SP_NKMemItem :: SP_NKMemItem( const char * key )
 {
@@ -216,6 +217,8 @@ SP_NKMemStat :: SP_NKMemStat()
 {
 	mName = new SP_NKStringList();
 	mValue = new SP_NKStringList();
+	memset( mIP, 0, sizeof( mIP ) );
+	mPort = 0;
 }
 
 SP_NKMemStat :: ~SP_NKMemStat()
@@ -227,12 +230,32 @@ SP_NKMemStat :: ~SP_NKMemStat()
 	mValue = NULL;
 }
 
-const SP_NKStringList * SP_NKMemStat :: getNameList()
+void SP_NKMemStat :: setIP( const char * ip )
+{
+	SP_NKStr::strlcpy( mIP, ip, sizeof( mIP ) );
+}
+
+const char * SP_NKMemStat :: getIP() const
+{
+	return mIP;
+}
+
+void SP_NKMemStat :: setPort( int port )
+{
+	mPort = port;
+}
+
+int SP_NKMemStat :: getPort() const
+{
+	return mPort;
+}
+
+const SP_NKStringList * SP_NKMemStat :: getNameList() const
 {
 	return mName;
 }
 
-const char * SP_NKMemStat :: getValue( const char * name )
+const char * SP_NKMemStat :: getValue( const char * name ) const
 {
 	int index  = mName->seek( name );
 	return mValue->getItem( index );
@@ -248,6 +271,46 @@ void SP_NKMemStat :: dump() const
 {
 	for( int i = 0; i < mName->getCount(); i++ ) {
 		printf( "STAT %s %s\n", mName->getItem(i), mValue->getItem(i) );
+	}
+}
+
+//===================================================================
+
+SP_NKMemStatList :: SP_NKMemStatList()
+{
+	mList = new SP_NKVector();
+}
+
+SP_NKMemStatList :: ~SP_NKMemStatList()
+{
+	for( int i = 0; i < mList->getCount(); i++ ) {
+		SP_NKMemStat * stat = (SP_NKMemStat*)mList->getItem( i );
+		delete stat;
+	}
+
+	delete mList;
+	mList = NULL;
+}
+
+int SP_NKMemStatList :: getCount() const
+{
+	return mList->getCount();
+}
+
+void SP_NKMemStatList :: append( SP_NKMemStat * stat )
+{
+	mList->append( stat );
+}
+
+const SP_NKMemStat * SP_NKMemStatList :: getItem( int index ) const
+{
+	return (SP_NKMemStat*)mList->getItem( index );
+}
+
+void SP_NKMemStatList :: dump() const
+{
+	for( int i = 0; i < mList->getCount(); i++ ) {
+		getItem(i)->dump();
 	}
 }
 

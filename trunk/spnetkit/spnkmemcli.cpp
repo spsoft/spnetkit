@@ -38,9 +38,19 @@ SP_NKMemClient :: ~SP_NKMemClient()
 	mSocketPool = NULL;
 }
 
+const SP_NKEndPointTable * SP_NKMemClient :: getEndPointTable() const
+{
+	return mEndPointTable;
+}
+
 void SP_NKMemClient :: setSocketPool( SP_NKSocketPool * socketPool )
 {
 	mSocketPool = socketPool;
+}
+
+SP_NKSocketPool * SP_NKMemClient :: getSocketPool() const
+{
+	return mSocketPool;
 }
 
 SP_NKSocket * SP_NKMemClient :: getSocket( const char * key )
@@ -104,7 +114,7 @@ bool SP_NKMemClient :: retr( SP_NKStringList * keyList, SP_NKMemItemList * itemL
 {
 	typedef struct tagEP2KeyList {
 		const SP_NKEndPoint_t * mEndPoint;
-		SP_NKStringList mKeyList;
+		SP_NKStringList * mKeyList;
 	} EP2KeyList_t;
 
 	SP_NKVector keyListMap; /// group by endpoint
@@ -128,9 +138,10 @@ bool SP_NKMemClient :: retr( SP_NKStringList * keyList, SP_NKMemItemList * itemL
 				if( NULL == ep2keylist ) {
 					ep2keylist = (EP2KeyList_t*)malloc( sizeof( EP2KeyList_t ) );
 					ep2keylist->mEndPoint = ep;
+					ep2keylist->mKeyList = new SP_NKStringList();
 					keyListMap.append( ep2keylist );
 				}
-				ep2keylist->mKeyList.append( key );
+				ep2keylist->mKeyList->append( key );
 			}
 		}
 	}
@@ -142,7 +153,7 @@ bool SP_NKMemClient :: retr( SP_NKStringList * keyList, SP_NKMemItemList * itemL
 		if( NULL != socket ) {
 			SP_NKMemProtocol protocol( socket );
 
-			if( 0 == protocol.retr( &( iter->mKeyList ), itemList ) ) {
+			if( 0 == protocol.retr( iter->mKeyList, itemList ) ) {
 				mSocketPool->save( socket );
 			} else {
 				delete socket;
@@ -152,6 +163,7 @@ bool SP_NKMemClient :: retr( SP_NKStringList * keyList, SP_NKMemItemList * itemL
 
 	for( int i = 0; i < keyListMap.getCount(); i++ ) {
 		EP2KeyList_t * iter = (EP2KeyList_t*)keyListMap.getItem( i );
+		delete iter->mKeyList;
 		free( iter );
 	}
 
@@ -210,6 +222,42 @@ bool SP_NKMemClient :: decr( const char * key, int value, int * newValue )
 	}
 
 	return ret;
+}
+
+bool SP_NKMemClient :: stat( SP_NKMemStatList * statList )
+{
+	for( int i = 0; i < mEndPointTable->getCount(); i++ ) {
+		const SP_NKEndPointBucket_t * bucket = mEndPointTable->getBucket(i);
+		const SP_NKEndPoint_t * endpoint = bucket->mList->getEndPoint(0);
+
+		SP_NKSocket * socket = mSocketPool->get( endpoint->mIP, endpoint->mPort );
+		if( NULL != socket ) {
+			SP_NKMemStat * stat = new SP_NKMemStat();
+			stat->setIP( endpoint->mIP );
+			stat->setPort( endpoint->mPort );
+
+			SP_NKMemProtocol protocol( socket );
+			if( 0 == protocol.stat( stat ) ) {
+				if( SP_NKMemProtocol::eSuccess == protocol.getLastError() ) {
+					statList->append( stat );
+				} else {
+					delete stat;
+					SP_NKLog::log( LOG_WARNING, "Cannot stat %s:%d, %s",
+						endpoint->mIP, endpoint->mPort, protocol.getLastReply() );
+				}
+				mSocketPool->save( socket );
+			} else {
+				delete socket;
+				SP_NKLog::log( LOG_WARNING, "Cannot stat %s:%d, socket error",
+						endpoint->mIP, endpoint->mPort );
+			}
+		} else {
+			SP_NKLog::log( LOG_WARNING, "Cannot connect %s:%d",
+					endpoint->mIP, endpoint->mPort );
+		}
+	}
+
+	return true;
 }
 
 //===================================================================
@@ -483,6 +531,22 @@ int SP_NKMemProtocol :: stat( SP_NKMemStat * stat )
 			} else {
 				break;
 			}
+		}
+	}
+
+	return ret;
+}
+
+int SP_NKMemProtocol :: flush_all( time_t exptime )
+{
+	int ret = -1;
+
+	mLastError = eError;
+
+	if( mSocket->printf( "flush_all %d\r\n", exptime ) > 0 ) {
+		if( mSocket->readline( mLastReply, sizeof( mLastReply ) ) > 0 ) {
+			mLastError = eSuccess;
+			ret = 0;
 		}
 	}
 

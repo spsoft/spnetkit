@@ -15,6 +15,7 @@ class SP_NKStringList;
 class SP_NKMemItem;
 class SP_NKMemItemList;
 class SP_NKMemStat;
+class SP_NKMemStatList;
 
 class SP_NKEndPointTable;
 class SP_NKSocketPool;
@@ -31,6 +32,10 @@ public:
 
 	void setSocketPool( SP_NKSocketPool * socketPool );
 
+	SP_NKSocketPool * getSocketPool() const;
+
+	const SP_NKEndPointTable * getEndPointTable() const;
+
 	bool stor( const char * cmd, SP_NKMemItem * item );
 
 	bool retr( const char * key, SP_NKMemItem * item );
@@ -42,6 +47,8 @@ public:
 	bool incr( const char * key, int value, int * newValue );
 
 	bool decr( const char * key, int value, int * newValue );
+
+	bool stat( SP_NKMemStatList * statList );
 
 private:
 
@@ -102,6 +109,9 @@ public:
 
 	// @return 0 : socket ok, -1 : socket error
 	int stat( SP_NKMemStat * stat );
+
+	// @return 0 : socket ok, -1 : socket error
+	int flush_all( time_t exptime = 0 );
 
 	// @return 0 : socket ok, -1 : socket error
 	int version( char * buff, size_t len );

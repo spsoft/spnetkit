@@ -66,6 +66,9 @@ public:
 	uint32_t getTableKeyMax();
 
 private:
+
+	static int cmpBucket( const void * item1, const void * item2 );
+
 	SP_NKVector * mList;
 	uint32_t mTableKeyMax;
 };
