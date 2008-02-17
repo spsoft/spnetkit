@@ -90,3 +90,51 @@ uint32_t SP_NKHash :: crc32( const char * key, size_t len )
 	return ~crc;
 }
 
+uint64_t SP_NKHash :: fnv64( const char * key, size_t len )
+{
+	uint64_t hash= FNV_64_INIT;
+
+	for( uint32_t x= 0; x < len; x++ ) {
+		hash *= FNV_64_PRIME;
+		hash ^= key[x];
+	}
+
+	return hash;
+}
+
+uint64_t SP_NKHash :: fnv64a( const char * key, size_t len )
+{
+	uint64_t hash= FNV_64_INIT;
+
+	for( uint32_t x= 0; x < len; x++ ) {
+		hash ^= key[x];
+		hash *= FNV_64_PRIME;
+	}
+
+	return hash;
+}
+
+uint32_t SP_NKHash :: fnv32( const char * key, size_t len )
+{
+	uint32_t hash= FNV_32_INIT;
+
+	for( uint32_t x= 0; x < len; x++ ) {
+		hash *= FNV_32_PRIME;
+		hash ^= key[x];
+	}
+
+	return hash;
+}
+
+uint32_t SP_NKHash :: fnv32a( const char * key, size_t len )
+{
+	uint32_t hash= FNV_32_INIT;
+
+	for( uint32_t x= 0; x < len; x++ ) {
+		hash ^= key[x];
+		hash *= FNV_32_PRIME;
+	}
+
+	return hash;
+}
+
