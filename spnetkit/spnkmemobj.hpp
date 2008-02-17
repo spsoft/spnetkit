@@ -79,8 +79,14 @@ public:
 	SP_NKMemStat();
 	~SP_NKMemStat();
 
-	const SP_NKStringList * getNameList();
-	const char * getValue( const char * name );
+	void setIP( const char * ip );
+	const char * getIP() const;
+
+	void setPort( int port );
+	int getPort() const;
+
+	const SP_NKStringList * getNameList() const;
+	const char * getValue( const char * name ) const;
 
 	void append( const char * name, const char * value );
 
@@ -88,6 +94,23 @@ public:
 
 private:
 	SP_NKStringList * mName, * mValue;
+	char mIP[ 16 ];
+	int mPort;
+};
+
+class SP_NKMemStatList {
+public:
+	SP_NKMemStatList();
+	~SP_NKMemStatList();
+
+	int getCount() const;
+	void append( SP_NKMemStat * stat );
+	const SP_NKMemStat * getItem( int index ) const;
+
+	void dump() const;
+
+private:
+	SP_NKVector * mList;
 };
 
 #endif

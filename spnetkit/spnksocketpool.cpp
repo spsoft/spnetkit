@@ -79,6 +79,9 @@ SP_NKSocketPool :: ~SP_NKSocketPool()
 
 	delete mList;
 	mList = NULL;
+
+	delete mSocketFactory;
+	mSocketFactory = NULL;
 }
 
 void SP_NKSocketPool :: setMaxIdleTime( int maxIdleTime )

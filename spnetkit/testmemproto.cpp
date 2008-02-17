@@ -31,6 +31,11 @@ void normalTest( const char * host, int port )
 	}
 
 	{
+		assert( 0 == protocol.flush_all( 100 ) );
+		assert( 0 == protocol.flush_all() );
+	}
+
+	{
 		SP_NKMemItem item;
 		item.setKey( "testkey" );
 		item.setFlags( 1234 );
