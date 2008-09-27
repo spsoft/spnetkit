@@ -30,6 +30,15 @@ void SP_NKSocket :: setLogSocketDefault( int logSocket )
 
 int SP_NKSocket :: poll( int fd, int events, int * revents, int timeout )
 {
+	struct timeval tv;
+	tv.tv_sec = timeout;
+	tv.tv_usec = 0;
+
+	return poll( fd, events, revents, &tv );
+}
+
+int SP_NKSocket :: poll( int fd, int events, int * revents, const struct timeval * timeout )
+{
 	//SP_NKLog::log( LOG_DEBUG, "SP_NKSocket::poll( fd=%i, events=%d, ..., )", fd, events );
 
 	int ret = -1 ;
@@ -39,8 +48,13 @@ int SP_NKSocket :: poll( int fd, int events, int * revents, int timeout )
 	pfd.fd = fd;
 	pfd.events = events;
 
-	for( time_t endTime = time( NULL ) + timeout; time( NULL ) < endTime; ) {
-		ret = ::poll( &pfd, 1, timeout * 100 );
+	int ms = 1000 * timeout->tv_sec + ( timeout->tv_usec / 1000 );
+
+	errno = 0;
+
+	// retry again for EINTR
+	for( int i = 0; i < 2; i++ ) {
+		ret = ::poll( &pfd, 1, ms );
 		if( -1 == ret && EINTR == errno ) continue;
 		break;
 	}
@@ -50,8 +64,8 @@ int SP_NKSocket :: poll( int fd, int events, int * revents, int timeout )
 	*revents = pfd.revents;
 
 	if( mLogSocketDefault ) {
-		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket::poll( fd=%i, events=%i, revents=%i, time=%d )=%i",
-				fd, events, *revents, timeout, ret );
+		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket::poll( fd=%i, events=%i, revents=%i, timeout={%d,%d} )=%i",
+				fd, events, *revents, timeout->tv_sec, timeout->tv_usec, ret );
 	}
 
 	return ret;
@@ -173,21 +187,16 @@ int SP_NKSocket :: readline( char * buffer, size_t len )
 			break;
 		}
 
-		int ioRet = -1;
-		do {
-			ioRet = realRecv( mSocketFd, mBuffer + mBufferLen, sizeof( mBuffer ) - mBufferLen );
-			if( ioRet > 0 ) mBufferLen += ioRet;
-		} while( -1 == ioRet && errno == EINTR );
+		int ioRet = realRecv( mSocketFd, mBuffer + mBufferLen, sizeof( mBuffer ) - mBufferLen );
+		if( ioRet > 0 ) mBufferLen += ioRet;
 
 		while( -1 == ioRet && ( EAGAIN == errno || EWOULDBLOCK == errno ) && time( NULL ) < endTime ) {
 			int events = 0;
 			int pollRet = poll( mSocketFd, POLLIN, &events, mSocketTimeout );
 
 			if( pollRet > 0 && ( POLLIN & events ) ) {
-				do {
-					ioRet = realRecv( mSocketFd, mBuffer + mBufferLen, sizeof( mBuffer ) - mBufferLen );
-					if( ioRet > 0 ) mBufferLen += ioRet;
-				} while( -1 == ioRet && errno == EINTR );
+				ioRet = realRecv( mSocketFd, mBuffer + mBufferLen, sizeof( mBuffer ) - mBufferLen );
+				if( ioRet > 0 ) mBufferLen += ioRet;
 			} else {
 				break;
 			}
@@ -256,21 +265,16 @@ int SP_NKSocket :: read( void * buffer, size_t len )
 	for( time_t endTime = time( NULL ) + mSocketTimeout;
 			0 == retLen && time( NULL ) < endTime; ) {
 
-		int ioRet = -1;
-		do {
-			ioRet = realRecv( mSocketFd, (char*)buffer + retLen, len - retLen );
-			if( ioRet > 0 ) retLen += ioRet;
-		} while( -1 == ioRet && errno == EINTR );
+		int ioRet = realRecv( mSocketFd, (char*)buffer + retLen, len - retLen );
+		if( ioRet > 0 ) retLen += ioRet;
 
 		while( -1 == ioRet && ( EAGAIN == errno || EWOULDBLOCK == errno ) && time( NULL ) < endTime ) {
 			int events = 0;
 			int pollRet = poll( mSocketFd, POLLIN, &events, mSocketTimeout );
 
 			if( pollRet > 0 && ( POLLIN & events ) ) {
-				do {
-					ioRet = realRecv( mSocketFd, (char*)buffer + retLen, len - retLen );
-					if( ioRet > 0 ) retLen += ioRet;
-				} while( -1 == ioRet && errno == EINTR );
+				ioRet = realRecv( mSocketFd, (char*)buffer + retLen, len - retLen );
+				if( ioRet > 0 ) retLen += ioRet;
 			} else {
 				break;
 			}
@@ -337,21 +341,16 @@ int SP_NKSocket :: writen( const void * buffer, size_t len )
 	for( time_t endTime = time( NULL ) + mSocketTimeout;
 			retLen < (int)len && time( NULL ) < endTime; ) {
 
-		int ioRet = -1;
-		do {
-			ioRet = realSend( mSocketFd, (char*)buffer + retLen, len - retLen );
-			if( ioRet > 0 ) retLen += ioRet;
-		} while( -1 == ioRet && errno == EINTR );
+		int ioRet = realSend( mSocketFd, (char*)buffer + retLen, len - retLen );
+		if( ioRet > 0 ) retLen += ioRet;
 
 		while( -1 == ioRet && ( EAGAIN == errno || EWOULDBLOCK == errno ) && time( NULL ) < endTime ) {
 			int events = 0;
 			int pollRet = poll( mSocketFd, POLLOUT, &events, mSocketTimeout );
 
 			if( pollRet > 0 && ( POLLOUT & events ) ) {
-				do {
-					ioRet = realSend( mSocketFd, (char*)buffer + retLen, len - retLen );
-					if( ioRet > 0 ) retLen += ioRet;
-				} while( -1 == ioRet && errno == EINTR );
+				ioRet = realSend( mSocketFd, (char*)buffer + retLen, len - retLen );
+				if( ioRet > 0 ) retLen += ioRet;
 			} else {
 				break;
 			}
@@ -417,9 +416,12 @@ int SP_NKTcpSocket :: realSend( int fd, const void * buffer, size_t len )
 }
 
 int SP_NKTcpSocket :: openSocket( const char * ip, int port,
-		int connectTimeout, const char * bindAddr )
+		const struct timeval * connectTimeout, const char * bindAddr )
 {
-	//SP_NKLog::log( LOG_DEBUG, "SP_NKTcpSocket::openSocket( %s, %d, %d )", ip, port, connectTimeout );
+	if( mLogSocketDefault ) {
+		SP_NKLog::log( LOG_DEBUG, "SP_NKTcpSocket::openSocket( %s, %d, {%d,%d}, \"%s\" )",
+				ip, port, connectTimeout->tv_sec, connectTimeout->tv_usec, bindAddr );
+	}
 
 	int socketFd = socket( AF_INET, SOCK_STREAM, IPPROTO_IP );
 
@@ -460,16 +462,20 @@ int SP_NKTcpSocket :: openSocket( const char * ip, int port,
 		socketFd = -1;
 	}
 
-	SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKTcpSocket::openSocket( %s, %d, %d )=%d",
-			ip, port, connectTimeout, socketFd );
+	if( mLogSocketDefault ) {
+		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKTcpSocket::openSocket( %s, %d, {%d,%d}, \"%s\" )=%d",
+				ip, port, connectTimeout->tv_sec, connectTimeout->tv_usec, bindAddr, socketFd );
+	}
 
 	return socketFd;
 }
 
 int SP_NKTcpSocket :: connectNonblock( int socketFd, struct sockaddr * addr,
-	socklen_t addrLen, int connectTimeout )
+	socklen_t addrLen, const struct timeval * connectTimeout )
 {
-	//SP_NKLog::log( LOG_DEBUG, "SP_NKTcpSocket(%d)::connectNonblock()", socketFd );
+	if( mLogSocketDefault ) {
+		SP_NKLog::log( LOG_DEBUG, "SP_NKTcpSocket(%d)::connectNonblock()", socketFd );
+	}
 
 	int error = 0;
 
@@ -500,7 +506,9 @@ int SP_NKTcpSocket :: connectNonblock( int socketFd, struct sockaddr * addr,
 		}
 	}
 
-	SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKTcpSocket(%d)::connectNonblock()=%d", socketFd, error );
+	if( mLogSocketDefault ) {
+		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKTcpSocket(%d)::connectNonblock()=%d", socketFd, error );
+	}
 
 	return error;
 }
@@ -517,7 +525,27 @@ SP_NKTcpSocket :: SP_NKTcpSocket( const char * ip, int port, int connectTimeout,
 {
 	connectTimeout = connectTimeout > 0 ? connectTimeout : DEFAULT_CONNECT_TIMEOUT;
 
-	int fd = openSocket( ip, port, connectTimeout, bindAddr );
+	struct timeval tv;
+	tv.tv_sec = connectTimeout;
+	tv.tv_usec = 0;
+
+	int fd = openSocket( ip, port, &tv, bindAddr );
+	init( fd, 1 );
+}
+
+SP_NKTcpSocket :: SP_NKTcpSocket( const char * ip, int port,
+		const struct timeval * connectTimeout, const char * bindAddr )
+{
+	struct timeval tv;
+
+	if( NULL != connectTimeout ) {
+		tv = *connectTimeout;
+	} else {
+		tv.tv_sec = DEFAULT_CONNECT_TIMEOUT;
+		tv.tv_usec = 0;
+	}
+
+	int fd = openSocket( ip, port, &tv, bindAddr );
 	init( fd, 1 );
 }
 
