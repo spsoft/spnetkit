@@ -54,7 +54,11 @@ SP_NKSslSocket :: SP_NKSslSocket( void * sslCtx, const char * ip, int port,
 
 	connectTimeout = connectTimeout > 0 ? connectTimeout : DEFAULT_CONNECT_TIMEOUT;
 
-	int fd = SP_NKTcpSocket::openSocket( ip, port, connectTimeout, bindAddr );
+	struct timeval tv;
+	tv.tv_sec = connectTimeout;
+	tv.tv_usec = 0;
+
+	int fd = SP_NKTcpSocket::openSocket( ip, port, &tv, bindAddr );
 
 	SSL_set_fd( (SSL*)mSsl, fd );
 
