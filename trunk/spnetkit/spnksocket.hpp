@@ -18,7 +18,9 @@ public:
 	 * return 0 : timeout,
 	 * return -1 : error, and errno is set appropriately
 	 */
-	static int poll( int fd, int events, int * revents, int timeout );
+	static int poll( int fd, int events, int * revents, int timeoutSeconds );
+
+	static int poll( int fd, int events, int * revents, const struct timeval * timeout );
 
 	static void setLogSocketDefault( int logSocket );
 
@@ -29,7 +31,7 @@ public:
 
 	virtual ~SP_NKSocket();
 
-	void setSocketTimeout( int socketTimeout );
+	void setSocketTimeout( int socketTimeoutSeconds );
 
 	void setLogSocket( int logSocket );
 
@@ -119,20 +121,23 @@ private:
 class SP_NKTcpSocket : public SP_NKSocket {
 public:
 	static int openSocket( const char * ip, int port,
-		int connectTimeout, const char * bindAddr );
+		const struct timeval * connectTimeout, const char * bindAddr );
 
 public:
 	SP_NKTcpSocket( int socketFd );
 
 	SP_NKTcpSocket( const char * ip, int port,
-			int connectTimeout = 0, const char * bindAddr = 0 );
+			int connectTimeoutSeconds = 0, const char * bindAddr = 0 );
+
+	SP_NKTcpSocket( const char * ip, int port,
+			const struct timeval * connectTimeout, const char * bindAddr = 0 );
 
 	virtual ~SP_NKTcpSocket();
 
 private:
 
 	static int connectNonblock( int sockFd, struct sockaddr * addr,
-		socklen_t addrLen, int connectTimeout );
+		socklen_t addrLen, const struct timeval * connectTimeout );
 
 	virtual int realRecv( int fd, void * buffer, size_t len );
 	virtual int realSend( int fd, const void * buffer, size_t len );
