@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "spnksocketpool.hpp"
 
@@ -58,12 +59,12 @@ SP_NKSocketPool :: SP_NKSocketPool( int maxIdlePerEndPoint, SP_NKSocketFactory *
 	mSocketFactory = socketFactory;
 	mList = new SP_NKVector();
 
-	pthread_mutex_init( &mMutex, NULL );
+	spnk_thread_mutex_init( &mMutex, NULL );
 }
 
 SP_NKSocketPool :: ~SP_NKSocketPool()
 {
-	pthread_mutex_destroy( &mMutex );
+	spnk_thread_mutex_destroy( &mMutex );
 
 	for( int i = 0; i < mList->getCount(); i++ ) {
 		Entry_t * iter = (Entry_t*)mList->getItem( i );
@@ -107,7 +108,7 @@ SP_NKSocket * SP_NKSocketPool :: get( const char * ip, int port, int forceNew, i
 	if( 0 != isNew ) *isNew = 0;
 
 	if( 0 == forceNew ) {
-		pthread_mutex_lock( &mMutex );
+		spnk_thread_mutex_lock( &mMutex );
 
 		Entry_t * entry = getEntry( ip, port );
 		if( NULL != entry ) {
@@ -121,7 +122,7 @@ SP_NKSocket * SP_NKSocketPool :: get( const char * ip, int port, int forceNew, i
 			}
 		}
 
-		pthread_mutex_unlock( &mMutex );
+		spnk_thread_mutex_unlock( &mMutex );
 	}
 
 	if( NULL == ret ) {
@@ -136,7 +137,7 @@ int SP_NKSocketPool :: save( SP_NKSocket * socket )
 {
 	int ret = 0;
 
-	pthread_mutex_lock( &mMutex );
+	spnk_thread_mutex_lock( &mMutex );
 
 	Entry_t * entry = getEntry( socket->getPeerHost(), socket->getPeerPort() );
 	if( NULL == entry ) {
@@ -156,7 +157,7 @@ int SP_NKSocketPool :: save( SP_NKSocket * socket )
 		delete socket;
 	}
 
-	pthread_mutex_unlock( &mMutex );
+	spnk_thread_mutex_unlock( &mMutex );
 
 	return ret;
 }
@@ -165,7 +166,7 @@ int SP_NKSocketPool :: clean( const char * ip, int port )
 {
 	int ret = 0;
 
-	pthread_mutex_lock( &mMutex );
+	spnk_thread_mutex_lock( &mMutex );
 
 	Entry_t * entry = getEntry( ip, port );
 	if( NULL != entry ) {
@@ -178,7 +179,7 @@ int SP_NKSocketPool :: clean( const char * ip, int port )
 		entry->mList->clean();
 	}
 
-	pthread_mutex_unlock( &mMutex );
+	spnk_thread_mutex_unlock( &mMutex );
 
 	return ret;
 }

@@ -6,14 +6,16 @@
 #ifndef __spnksocket_hpp__
 #define __spnksocket_hpp__
 
-#include <sys/socket.h>
+#include "spnkporting.hpp"
 
 typedef struct tagSP_NKSocketImpl SP_NKSocketImpl_t;
 
 class SP_NKSocket {
 public:
-	static const int DEFAULT_SOCKET_TIMEOUT  = 600;
-	static const int DEFAULT_CONNECT_TIMEOUT = 60;
+	enum {
+		DEFAULT_SOCKET_TIMEOUT  = 600,
+		DEFAULT_CONNECT_TIMEOUT = 60
+	};
 
 	/**
 	 * return > 0 : how many events
@@ -26,7 +28,9 @@ public:
 
 	static void setLogSocketDefault( int logSocket );
 
-private:
+	static int setNonblocking( int fd );
+
+protected:
 	static int mLogSocketDefault;
 
 public:

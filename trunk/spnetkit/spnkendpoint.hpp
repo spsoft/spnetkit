@@ -7,7 +7,7 @@
 #define __spnkendpoint_hpp__
 
 #include <time.h>
-#include <stdint.h>
+#include "spnkporting.hpp"
 
 class SP_NKVector;
 

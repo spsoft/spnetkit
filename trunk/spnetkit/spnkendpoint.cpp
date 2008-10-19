@@ -5,7 +5,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "spnkendpoint.hpp"
 
@@ -42,10 +41,10 @@ const SP_NKEndPoint_t * SP_NKEndPointList :: getRandomEndPoint() const
 {
 	static unsigned int suiSeed = 0;
 
-	int totalWeight = 0;
+	int totalWeight = 0, i = 0;
 
 	time_t nowTime = time( NULL );
-	for( int i = 0; i < mList->getCount(); i++ ) {
+	for( i = 0; i < mList->getCount(); i++ ) {
 		SP_NKEndPoint_t * iter = (SP_NKEndPoint_t*)mList->getItem( i );
 
 		if( iter->mEnableTime < nowTime ) totalWeight += iter->mWeight;
@@ -58,7 +57,7 @@ const SP_NKEndPoint_t * SP_NKEndPointList :: getRandomEndPoint() const
 
 	SP_NKEndPoint_t * ret = NULL;
 
-	for( int i = 0; i < mList->getCount(); i++ ) {
+	for( i = 0; i < mList->getCount(); i++ ) {
 		SP_NKEndPoint_t * iter = (SP_NKEndPoint_t*)mList->getItem( i );
 
 		if( iter->mEnableTime < nowTime ) {

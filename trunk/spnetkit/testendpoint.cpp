@@ -83,5 +83,7 @@ int main( int argc, char * argv[] )
 	testList();
 
 	testTable();
+
+	return 0;
 }
 

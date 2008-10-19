@@ -4,8 +4,6 @@
  */
 
 #include <stdio.h>
-#include <syslog.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -23,6 +21,8 @@
 #include "spnklog.hpp"
 #include "spnksocket.hpp"
 #include "spnktime.hpp"
+
+#include "spnkgetopt.h"
 
 SP_NKMemClient * InitMemClient( const char * config )
 {
@@ -98,7 +98,9 @@ void showUsage( const char * program )
 
 int main( int argc, char * argv[] )
 {
+#ifndef WIN32
 	assert ( sigset ( SIGPIPE, SIG_IGN ) != SIG_ERR ) ;
+#endif
 
 	const char * config = "testmemcli.ini";
 	int loops = 100;
@@ -125,6 +127,8 @@ int main( int argc, char * argv[] )
 		}
 	}
 
+	if( 0 != spnk_initsock() ) assert( 0 );
+
 	SP_NKLog::setLogLevel( LOG_INFO );
 
 	printf( "Use config %s\n", config );
@@ -137,7 +141,9 @@ int main( int argc, char * argv[] )
 
 	SP_NKClock clock;
 
-	for( int i = 0; i < loops; i++ ) {
+	int i = 0;
+
+	for( i = 0; i < loops; i++ ) {
 		snprintf( key, sizeof( key ), "testkey%d", i );
 
 		item.setKey( key );
@@ -156,7 +162,7 @@ int main( int argc, char * argv[] )
 
 	printf( "stor %d items ok, use %ld ms\n", loops, clock.getInterval() );
 
-	for( int i = 0; i < loops; i++ ) {
+	for( i = 0; i < loops; i++ ) {
 		snprintf( key, sizeof( key ), "testkey%d", i );
 
 		if( ! memClient->retr( key, &item ) ) {
@@ -167,7 +173,7 @@ int main( int argc, char * argv[] )
 
 	printf( "retr %d/1 items ok, use %ld ms\n", loops, clock.getInterval() );
 
-	for( int i = 0; i < loops; i += 100 ) {
+	for( i = 0; i < loops; i += 100 ) {
 		SP_NKStringList keyList;
 		for( int j = 0; j < 100; j++ ) {
 			snprintf( key, sizeof( key ), "testkey%d", i + j );
@@ -188,7 +194,7 @@ int main( int argc, char * argv[] )
 	SP_NKMemStatList statList;
 	memClient->stat( &statList );
 
-	for( int i = 0; i < statList.getCount(); i++ ) {
+	for( i = 0; i < statList.getCount(); i++ ) {
 		const SP_NKMemStat * stat = statList.getItem( i );
 		printf( "%s:%d curr_items %s\n", stat->getIP(), stat->getPort(),
 				stat->getValue( "curr_items" ) );

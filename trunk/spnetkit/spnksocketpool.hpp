@@ -6,7 +6,7 @@
 #ifndef __spnksocketpool_hpp__
 #define __spnksocketpool_hpp__
 
-#include <pthread.h>
+#include "spnkthread.hpp"
 
 class SP_NKSocket;
 class SP_NKVector;
@@ -52,7 +52,7 @@ private:
 	SP_NKVector * mList;
 	SP_NKSocketFactory * mSocketFactory;
 
-	pthread_mutex_t mMutex;
+	spnk_thread_mutex_t mMutex;
 
 	typedef struct tagEntry {
 		char mIP[ 16 ];

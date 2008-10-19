@@ -5,12 +5,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+
+#include "spnkporting.hpp"
 
 #include "spnkfile.hpp"
 #include "spnklog.hpp"
@@ -33,7 +34,12 @@ int SP_NKFileReader :: read( const char * file )
 {
 	int ret = -1;
 
+#ifndef WIN32
 	int fd = ::open( file, O_RDONLY );
+#else
+	int fd = _open( file, O_RDONLY );
+#endif
+
 	if( fd >= 0 ) {
 		struct stat fileStat;
 		if( 0 == fstat( fd, &fileStat ) ) {

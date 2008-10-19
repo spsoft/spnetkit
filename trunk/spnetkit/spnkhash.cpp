@@ -78,6 +78,12 @@ static const uint32_t sp_nkcrc32tab[256] = {
   0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
 };
 
+uint64_t SP_NKHash :: FNV_64_INIT = 0xcbf29ce484222325;
+uint64_t SP_NKHash :: FNV_64_PRIME = 0x100000001b3;
+
+uint32_t SP_NKHash :: FNV_32_INIT = 2166136261UL;
+uint32_t SP_NKHash :: FNV_32_PRIME = 16777619;
+
 uint32_t SP_NKHash :: crc32( const char * key, size_t len )
 {
 	uint32_t x;

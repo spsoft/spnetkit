@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "spnkporting.hpp"
+
 #include "spnksmtpaddr.hpp"
 #include "spnklist.hpp"
 #include "spnkstr.hpp"

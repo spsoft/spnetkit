@@ -6,8 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <errno.h>
+
+#include "spnkporting.hpp"
 
 #include "spnksmtpcli.hpp"
 #include "spnksmtpaddr.hpp"
@@ -350,7 +351,7 @@ int SP_NKSmtpProtocol :: welcome()
 	if( readReply( mSocket, mLastReply, sizeof( mLastReply ) ) > 0 ) {
 		ret = 0;
 	} else {
-		if( ETIMEDOUT == errno ) {
+		if( SPNK_ETIMEDOUT == errno ) {
 			snprintf( mLastReply, sizeof( mLastReply ),
 					"connect to %s[%s]: read timeout", mDomain, mSocket->getPeerHost() );
 		} else {
@@ -374,7 +375,7 @@ int SP_NKSmtpProtocol :: doCommand( const char * command, const char * tag )
 		if( readReply( mSocket, mLastReply, sizeof( mLastReply ) ) > 0 ) {
 			ret = 0;
 		} else {
-			if( ETIMEDOUT == errno ) {
+			if( SPNK_ETIMEDOUT == errno ) {
 				snprintf( mLastReply, sizeof( mLastReply ),
 					"conversation with %s[%s] timed out (in reply to %s)",
 					mDomain, mSocket->getPeerHost(), tag );
@@ -385,7 +386,7 @@ int SP_NKSmtpProtocol :: doCommand( const char * command, const char * tag )
 			}
 		}
 	} else {
-		if( ETIMEDOUT == errno ) {
+		if( SPNK_ETIMEDOUT == errno ) {
 			snprintf( mLastReply, sizeof( mLastReply ),
 					"conversation with %s[%s] timed out while sending %s",
 					mDomain, mSocket->getPeerHost(), tag );
@@ -503,7 +504,7 @@ int SP_NKSmtpProtocol :: mailData( const char * data, const size_t dataSize )
 		} else {
 			ret = -1;
 
-			if( ETIMEDOUT == errno ) {
+			if( SPNK_ETIMEDOUT == errno ) {
 				snprintf( mLastReply, sizeof( mLastReply ),
 						"conversation with %s[%s] timed out while sending message body",
 						mDomain, mSocket->getPeerHost() );
@@ -519,7 +520,7 @@ int SP_NKSmtpProtocol :: mailData( const char * data, const size_t dataSize )
 		if( mSocket->writen( "\r\n.\r\n", 5 ) <= 0 ) {
 			ret = -1;
 
-			if( ETIMEDOUT == errno ) {
+			if( SPNK_ETIMEDOUT == errno ) {
 				snprintf( mLastReply, sizeof( mLastReply ),
 						"conversation with %s[%s] timed out while sending end of data "
 						"-- message may be sent more than once",
@@ -543,7 +544,7 @@ int SP_NKSmtpProtocol :: mailData( const char * data, const size_t dataSize )
 		ret = 0;
 	} else {
 		if( 0 == ret ) {
-			if( ETIMEDOUT == errno ) {
+			if( SPNK_ETIMEDOUT == errno ) {
 				snprintf( mLastReply, sizeof( mLastReply ),
 					"conversation with %s[%s] timed out (in reply to end of DATA command)",
 					mDomain, mSocket->getPeerHost() );
