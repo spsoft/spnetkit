@@ -3,18 +3,19 @@
  * For license terms, see the file COPYING along with this library.
  */
 
-#include <syslog.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "spnksmtpcli.hpp"
 #include "spnksmtpaddr.hpp"
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
+
+#include "spnkgetopt.h"
 
 void printList( const char * type, SP_NKSmtpAddrList * list )
 {
@@ -59,6 +60,8 @@ int main( int argc, char * argv[] )
 		exit( 0 );
 	}
 
+	if( 0 != spnk_initsock() ) assert( 0 );
+
 	SP_NKSocket::setLogSocketDefault( 1 );
 	SP_NKLog::setLogLevel( LOG_DEBUG );
 
@@ -79,8 +82,6 @@ int main( int argc, char * argv[] )
 	printList( "success", client.getSuccessList() );
 	printList( "retry", client.getRetryList() );
 	printList( "error", client.getErrorList() );
-
-	closelog();
 
 	return 0;
 }

@@ -7,7 +7,7 @@
 #define __spmemobj_hpp__
 
 #include <sys/types.h>
-#include <stdint.h>
+#include "spnkporting.hpp"
 
 class SP_NKVector;
 class SP_NKStringList;
@@ -49,8 +49,6 @@ private:
 	time_t mExptime;
 	int mFlags;
 	uint64_t mCasUnique;
-
-	SP_NKMemItem & operator=( const SP_NKMemItem & other );
 };
 
 class SP_NKMemItemList {

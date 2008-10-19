@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "spnkporting.hpp"
+
 #include "spnkpop3cli.hpp"
 #include "spnklog.hpp"
 #include "spnksocket.hpp"

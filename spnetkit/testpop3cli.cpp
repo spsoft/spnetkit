@@ -3,15 +3,16 @@
  * For license terms, see the file COPYING along with this library.
  */
 
-#include <syslog.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "spnkpop3cli.hpp"
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
 #include "spnklist.hpp"
+
+#include "spnkgetopt.h"
 
 int main( int argc, char * argv[] )
 {
@@ -45,6 +46,8 @@ int main( int argc, char * argv[] )
 		exit( 0 );
 	}
 
+	if( 0 != spnk_initsock() ) assert( 0 );
+
 	SP_NKLog::setLogLevel( LOG_DEBUG );
 
 	SP_NKTcpSocket socket( host, 110 );
@@ -72,8 +75,6 @@ int main( int argc, char * argv[] )
 		client.getMailHeader( uid->getSeq(), &mail );
 		puts( (char*)mail.getItem( 0 ) );
 	}
-
-	closelog();
 
 	return 0;
 }

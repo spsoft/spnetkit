@@ -7,12 +7,73 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
-#include <pthread.h>
 #include <errno.h>
+
+#include "spnkporting.hpp"
 
 #include "spnklog.hpp"
 
-SP_NKLog::LogFunc_t SP_NKLog::mFunc = syslog;
+#ifdef WIN32
+
+void spnk_syslog (int priority, const char * format, ...)
+{
+	char logTemp[ 1024 ] = { 0 };
+
+	va_list vaList;
+	va_start( vaList, format );
+	_vsnprintf( logTemp, sizeof( logTemp ), format, vaList );
+	va_end ( vaList );
+
+	if( strchr( logTemp, '\n' ) ) {
+		printf( "%s", logTemp );
+	} else {
+		printf( "%s\n", logTemp );
+	}
+}
+
+void spnk_openlog (const char *ident , int option , int facility)
+{
+}
+
+/*
+ * Option flags for openlog.
+ *
+ * LOG_ODELAY no longer does anything.
+ * LOG_NDELAY is the inverse of what it used to be.
+ */
+#define LOG_PID         0x01    /* log the pid with each message */
+#define LOG_CONS        0x02    /* log on the console if errors in sending */
+#define LOG_ODELAY      0x04    /* delay open until first syslog() (default) */
+#define LOG_NDELAY      0x08    /* don't delay open */
+#define LOG_NOWAIT      0x10    /* don't wait for console forks: DEPRECATED */
+#define LOG_PERROR      0x20    /* log to stderr as well */
+
+#define	LOG_USER	(1<<3)
+
+/*
+ * arguments to setlogmask.
+ */
+#define LOG_MASK(pri)   (1 << (pri))        /* mask for one priority */
+#define LOG_UPTO(pri)   ((1 << ((pri)+1)) - 1)  /* all priorities through pri */
+
+#define LOG_PRIMASK 0x07    /* mask to extract priority part (internal) */
+                /* extract priority */
+#define LOG_PRI(p)  ((p) & LOG_PRIMASK)
+#define LOG_MAKEPRI(fac, pri)   (((fac) << 3) | (pri))
+
+#define spnk_threadid GetCurrentThreadId
+
+#else
+
+#include <pthread.h>
+
+#define spnk_syslog syslog
+#define spnk_openlog openlog
+#define spnk_threadid pthread_self
+
+#endif
+
+SP_NKLog::LogFunc_t SP_NKLog::mFunc = spnk_syslog;
 int SP_NKLog::mLevel = LOG_NOTICE;
 int SP_NKLog::mIsLogTimeStamp = 1;
 int SP_NKLog::mIsLogPriName = 1;
@@ -49,7 +110,7 @@ void SP_NKLog :: init4test( const char *ident )
 	option = option | LOG_PERROR;
 #endif
 
-	openlog( ident, option, LOG_USER );
+	spnk_openlog( ident, option, LOG_USER );
 }
 
 const char * SP_NKLog :: getPriName( int pri )
@@ -107,7 +168,7 @@ void SP_NKLog :: log( int pri, const char * fmt, ... )
 		snprintf( logText, sizeof( logText ),
 			"%04i-%02i-%02i %02i:%02i:%02i #%i ",
 			1900 + tmTime.tm_year, tmTime.tm_mon+1, tmTime.tm_mday,
-			tmTime.tm_hour, tmTime.tm_min, tmTime.tm_sec, (int)pthread_self() );
+			tmTime.tm_hour, tmTime.tm_min, tmTime.tm_sec, (int)spnk_threadid() );
 	}
 
 	if( mIsLogPriName ) {

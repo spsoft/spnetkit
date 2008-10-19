@@ -5,10 +5,11 @@
 
 #include <signal.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+
+#include "spnkporting.hpp"
 
 #include "spnkhttpmsg.hpp"
 #include "spnkhttpcli.hpp"
@@ -16,6 +17,8 @@
 
 #include "spnklog.hpp"
 #include "spnkfile.hpp"
+
+#include "spnkgetopt.h"
 
 void showUsage( const char * program )
 {
@@ -35,7 +38,9 @@ void showUsage( const char * program )
 
 int main( int argc, char * argv[] )
 {
+#ifndef WIN32
 	assert ( sigset ( SIGPIPE, SIG_IGN ) != SIG_ERR ) ;
+#endif
 
 	SP_NKLog::init4test( "testhttpcli" );
 	SP_NKLog::setLogLevel( LOG_DEBUG );
@@ -72,6 +77,8 @@ int main( int argc, char * argv[] )
 		printf( "Please specify the file for POST body!\n" );
 		showUsage( argv[ 0 ] );
 	}
+
+	if( 0 != spnk_initsock() ) assert( 0 );
 
 	SP_NKHttpRequest request;
 	request.setURI( uri );

@@ -6,8 +6,8 @@
 #ifndef __spnkhash_hpp__
 #define __spnkhash_hpp__
 
-#include <stdint.h>
 #include <sys/types.h>
+#include "spnkporting.hpp"
 
 class SP_NKHash {
 public:
@@ -22,11 +22,11 @@ public:
 
 	static uint32_t fnv32a( const char * key, size_t len );
 
-	static const uint64_t FNV_64_INIT= 0xcbf29ce484222325LL;
-	static const uint64_t FNV_64_PRIME= 0x100000001b3LL;
+	static uint64_t FNV_64_INIT;
+	static uint64_t FNV_64_PRIME;
 
-	static const uint32_t FNV_32_INIT= 2166136261UL;
-	static const uint32_t FNV_32_PRIME= 16777619;
+	static uint32_t FNV_32_INIT;
+	static uint32_t FNV_32_PRIME;
 
 private:
 	SP_NKHash();

@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "spnkporting.hpp"
+
 #include "spnkhttpmsg.hpp"
 #include "spnklist.hpp"
 

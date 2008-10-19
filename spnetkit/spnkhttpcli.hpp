@@ -12,7 +12,7 @@ class SP_NKSocket;
 
 class SP_NKHttpProtocol {
 public:
-	static const int MAX_RECV_LEN = 8192;
+	enum { MAX_RECV_LEN = 8192 };
 
 	// @return 0 : socket ok, -1 : socket error
 	static int get( SP_NKSocket * socket,

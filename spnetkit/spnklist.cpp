@@ -169,18 +169,18 @@ int SP_NKStringList :: seek( const char * sample ) const
 
 char * SP_NKStringList :: getMerge( int * len, const char * sep )
 {
-	int sepLen = 0;
+	int sepLen = 0, i = 0;
 	if( NULL != sep && '\0' != sep ) sepLen = strlen( sep );
 
 	int mergeSize = sepLen * ( mList->getCount() - 1 );
-	for( int i = 0; i < mList->getCount(); i++ ) {
+	for( i = 0; i < mList->getCount(); i++ ) {
 		mergeSize += strlen( (char*)mList->getItem(i) );
 	}
 
 	char * ret = (char*)malloc( mergeSize + 1 );
 
 	char * pos = ret;
-	for( int i = 0; i < mList->getCount(); i++ ) {
+	for( i = 0; i < mList->getCount(); i++ ) {
 		if( 0 != i && sepLen > 0 ) {
 			strcpy( pos, sep );
 			pos += sepLen;

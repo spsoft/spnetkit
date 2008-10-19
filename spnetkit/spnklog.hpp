@@ -6,8 +6,6 @@
 #ifndef __spnklog_hpp__
 #define __spnklog_hpp__
 
-#include <syslog.h>
-
 /**
  * a simple wrapper for syslog, so than you can easy to
  * replace syslog by your own log function

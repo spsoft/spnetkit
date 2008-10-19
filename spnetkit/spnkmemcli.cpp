@@ -118,8 +118,9 @@ bool SP_NKMemClient :: retr( SP_NKStringList * keyList, SP_NKMemItemList * itemL
 	} EP2KeyList_t;
 
 	SP_NKVector keyListMap; /// group by endpoint
+	int i = 0;
 
-	for( int i = 0; i < keyList->getCount(); i++ ) {
+	for( i = 0; i < keyList->getCount(); i++ ) {
 		const char * key = keyList->getItem( i );
 
 		uint32_t keyHash = mHashFunc( key, strlen( key ) );
@@ -146,7 +147,7 @@ bool SP_NKMemClient :: retr( SP_NKStringList * keyList, SP_NKMemItemList * itemL
 		}
 	}
 
-	for( int i = 0; i < keyListMap.getCount(); i++ ) {
+	for( i = 0; i < keyListMap.getCount(); i++ ) {
 		EP2KeyList_t * iter = (EP2KeyList_t*)keyListMap.getItem( i );
 
 		SP_NKSocket * socket = mSocketPool->get( iter->mEndPoint->mIP, iter->mEndPoint->mPort );
@@ -161,7 +162,7 @@ bool SP_NKMemClient :: retr( SP_NKStringList * keyList, SP_NKMemItemList * itemL
 		}
 	}
 
-	for( int i = 0; i < keyListMap.getCount(); i++ ) {
+	for( i = 0; i < keyListMap.getCount(); i++ ) {
 		EP2KeyList_t * iter = (EP2KeyList_t*)keyListMap.getItem( i );
 		delete iter->mKeyList;
 		free( iter );

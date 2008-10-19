@@ -7,7 +7,7 @@
 #define __spnkmemcli_hpp__
 
 #include <sys/types.h>
-#include <stdint.h>
+#include "spnkporting.hpp"
 
 class SP_NKSocket;
 class SP_NKStringList;

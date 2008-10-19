@@ -12,7 +12,7 @@ LINT = lint -c
 RM = /bin/rm -f
 
 ifeq ($(origin version), undefined)
-	version = 0.2.0
+	version = 0.3.0
 endif
 
 OS=$(shell uname)
@@ -21,6 +21,8 @@ ifeq ($(OS), SunOS)
 	LDFLAGS += -lnsl -lsocket
 	CFLAGS += -D_POSIX_THREAD_PROCESS_SHARED
 endif
+
+INSTLIB=(cp $@ ../lib)
 
 #--------------------------------------------------------------------
 

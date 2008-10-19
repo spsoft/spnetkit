@@ -6,11 +6,15 @@
 #include <assert.h>
 
 #include "spnksocketpool.hpp"
-
 #include "spnklog.hpp"
+#include "spnksocket.hpp"
+
+#include "spnkporting.hpp"
 
 int main( int argc, char * argv[] )
 {
+	if( 0 != spnk_initsock() ) assert( 0 );
+
 	SP_NKLog::init4test( "testsocketpool" );
 
 	SP_NKSocketPool pool( 1, new SP_NKTcpSocketFactory() );
