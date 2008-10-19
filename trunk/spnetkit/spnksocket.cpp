@@ -21,6 +21,22 @@
 #include "spnklog.hpp"
 #include "spnkstr.hpp"
 
+typedef struct tagSP_NKSocketImpl {
+	int mSocketFd;
+	int mToBeOwner;
+	char mPeerName[ 64 ];
+	int mPeerPort;
+
+	char mBuffer[ 8192 ];
+	size_t mBufferLen;
+
+	int mSocketTimeout;
+
+	time_t mLastActiveTime;
+
+	int mLogSocket;
+} SP_NKSocketImpl_t;
+
 int SP_NKSocket :: mLogSocketDefault = 0;
 
 void SP_NKSocket :: setLogSocketDefault( int logSocket )
@@ -73,55 +89,60 @@ int SP_NKSocket :: poll( int fd, int events, int * revents, const struct timeval
 
 SP_NKSocket :: SP_NKSocket()
 {
-	mSocketFd = -1;
-	mToBeOwner = 0;
+	mImpl = (SP_NKSocketImpl_t*)malloc( sizeof( SP_NKSocketImpl_t ) );
 
-	mSocketTimeout = DEFAULT_SOCKET_TIMEOUT;
+	mImpl->mSocketFd = -1;
+	mImpl->mToBeOwner = 0;
 
-	memset( mPeerName, 0, sizeof( mPeerName ) );
-	SP_NKStr::strlcpy( mPeerName, "unknown", sizeof( mPeerName ) );
+	mImpl->mSocketTimeout = DEFAULT_SOCKET_TIMEOUT;
 
-	mPeerPort = 0;
+	memset( mImpl->mPeerName, 0, sizeof( mImpl->mPeerName ) );
+	SP_NKStr::strlcpy( mImpl->mPeerName, "unknown", sizeof( mImpl->mPeerName ) );
 
-	memset( mBuffer, 0, sizeof( mBuffer ) );
-	mBufferLen = 0;
+	mImpl->mPeerPort = 0;
 
-	mLogSocket = mLogSocketDefault;
+	memset( mImpl->mBuffer, 0, sizeof( mImpl->mBuffer ) );
+	mImpl->mBufferLen = 0;
 
-	time( &mLastActiveTime );
+	mImpl->mLogSocket = mLogSocketDefault;
+
+	time( &mImpl->mLastActiveTime );
 }
 
 void SP_NKSocket :: init( int socketFd, int toBeOwner )
 {
-	mSocketFd = socketFd;
+	mImpl->mSocketFd = socketFd;
 
-	if( mSocketFd >= 0 ) {
+	if( mImpl->mSocketFd >= 0 ) {
 		struct sockaddr_in addr;
 		socklen_t addrLen = sizeof( addr );
-		if( 0 == getpeername( mSocketFd, (struct sockaddr*)&addr, &addrLen ) ) {
+		if( 0 == getpeername( mImpl->mSocketFd, (struct sockaddr*)&addr, &addrLen ) ) {
 			const unsigned char *p = ( const unsigned char *) &( addr.sin_addr );
-			snprintf( mPeerName, sizeof( mPeerName ), "%i.%i.%i.%i", p[0], p[1], p[2], p[3] );
-			mPeerPort = ntohs( addr.sin_port );
+			snprintf( mImpl->mPeerName, sizeof( mImpl->mPeerName ), "%i.%i.%i.%i", p[0], p[1], p[2], p[3] );
+			mImpl->mPeerPort = ntohs( addr.sin_port );
 		}
 	}
 
-	mToBeOwner = toBeOwner;
-	mSocketTimeout = DEFAULT_SOCKET_TIMEOUT;
+	mImpl->mToBeOwner = toBeOwner;
+	mImpl->mSocketTimeout = DEFAULT_SOCKET_TIMEOUT;
 }
 
 SP_NKSocket :: ~SP_NKSocket()
 {
-	if( mToBeOwner ) close();
+	if( mImpl->mToBeOwner ) close();
+
+	free( mImpl );
+	mImpl = NULL;
 }
 
 int SP_NKSocket :: close()
 {
 	int ret = 0;
 
-	if( mSocketFd >= 0 ) {
-		//ret = shutdown( mSocketFd, 2 );
-		ret = ::close( mSocketFd );
-		mSocketFd = -1;
+	if( mImpl->mSocketFd >= 0 ) {
+		ret = shutdown( mImpl->mSocketFd, 2 );
+		ret = ::close( mImpl->mSocketFd );
+		mImpl->mSocketFd = -1;
 	}
 
 	return ret;
@@ -129,32 +150,32 @@ int SP_NKSocket :: close()
 
 void SP_NKSocket :: setSocketTimeout( int socketTimeout )
 {
-	mSocketTimeout = socketTimeout > 0 ? socketTimeout : mSocketTimeout;
+	mImpl->mSocketTimeout = socketTimeout > 0 ? socketTimeout : mImpl->mSocketTimeout;
 }
 
 void SP_NKSocket :: setLogSocket( int logSocket )
 {
-	mLogSocket = logSocket;
+	mImpl->mLogSocket = logSocket;
 }
 
 int SP_NKSocket :: getSocketFd()
 {
-	return mSocketFd;
+	return mImpl->mSocketFd;
 }
 
 const char * SP_NKSocket :: getPeerHost()
 {
-	return mPeerName;
+	return mImpl->mPeerName;
 }
 
 int SP_NKSocket :: getPeerPort()
 {
-	return mPeerPort;
+	return mImpl->mPeerPort;
 }
 
 time_t SP_NKSocket :: getLastActiveTime()
 {
-	return mLastActiveTime;
+	return mImpl->mLastActiveTime;
 }
 
 int SP_NKSocket :: readline( char * buffer, size_t len )
@@ -162,41 +183,43 @@ int SP_NKSocket :: readline( char * buffer, size_t len )
 	int retLen = -1;
 
 	*buffer = '\0';
-	for( time_t endTime = time( NULL ) + mSocketTimeout; time( NULL ) < endTime; ) {
+	for( time_t endTime = time( NULL ) + mImpl->mSocketTimeout; time( NULL ) < endTime; ) {
 
-		char * pos = (char*)memchr( mBuffer, '\n', mBufferLen );
+		char * pos = (char*)memchr( mImpl->mBuffer, '\n', mImpl->mBufferLen );
 
 		// if the line is longer than sizeof( mBuffer )
-		if( NULL == pos && mBufferLen == sizeof( mBuffer ) ) {
-			pos = mBuffer + mBufferLen - 1;
+		if( NULL == pos && mImpl->mBufferLen == sizeof( mImpl->mBuffer ) ) {
+			pos = mImpl->mBuffer + mImpl->mBufferLen - 1;
 
 			SP_NKLog::log( LOG_WARNING, "SP_NKSocket(%i)::getLine  line is long than %i",
-				mSocketFd, sizeof( mBuffer ) );
+				mImpl->mSocketFd, sizeof( mImpl->mBuffer ) );
 		}
 
 		if( NULL != pos ) {
-			retLen = pos - mBuffer + 1;
+			retLen = pos - mImpl->mBuffer + 1;
 
 			int copyLen = retLen > (int)len ? len : retLen;
-			memcpy( buffer, mBuffer, copyLen );
+			memcpy( buffer, mImpl->mBuffer, copyLen );
 			buffer[ --copyLen ] = '\0';
 			if( '\r' == buffer[ copyLen - 1 ] ) buffer[ --copyLen ] = '\0';
 
-			mBufferLen -= retLen;
-			memmove( mBuffer, pos + 1, mBufferLen );
+			mImpl->mBufferLen -= retLen;
+			memmove( mImpl->mBuffer, pos + 1, mImpl->mBufferLen );
 			break;
 		}
 
-		int ioRet = realRecv( mSocketFd, mBuffer + mBufferLen, sizeof( mBuffer ) - mBufferLen );
-		if( ioRet > 0 ) mBufferLen += ioRet;
+		int ioRet = realRecv( mImpl->mSocketFd, mImpl->mBuffer + mImpl->mBufferLen,
+				sizeof( mImpl->mBuffer ) - mImpl->mBufferLen );
+		if( ioRet > 0 ) mImpl->mBufferLen += ioRet;
 
 		while( -1 == ioRet && ( EAGAIN == errno || EWOULDBLOCK == errno ) && time( NULL ) < endTime ) {
 			int events = 0;
-			int pollRet = poll( mSocketFd, POLLIN, &events, mSocketTimeout );
+			int pollRet = poll( mImpl->mSocketFd, POLLIN, &events, mImpl->mSocketTimeout );
 
 			if( pollRet > 0 && ( POLLIN & events ) ) {
-				ioRet = realRecv( mSocketFd, mBuffer + mBufferLen, sizeof( mBuffer ) - mBufferLen );
-				if( ioRet > 0 ) mBufferLen += ioRet;
+				ioRet = realRecv( mImpl->mSocketFd, mImpl->mBuffer + mImpl->mBufferLen,
+						sizeof( mImpl->mBuffer ) - mImpl->mBufferLen );
+				if( ioRet > 0 ) mImpl->mBufferLen += ioRet;
 			} else {
 				break;
 			}
@@ -204,24 +227,24 @@ int SP_NKSocket :: readline( char * buffer, size_t len )
 
 		if( ioRet <= 0 ) {
 			if( 0 == ioRet ) {
-				retLen = mBufferLen;
+				retLen = mImpl->mBufferLen;
 
 				int copyLen = retLen > (int)( len - 1 ) ? ( len - 1 ) : retLen;
-				memcpy( buffer, mBuffer, copyLen );
+				memcpy( buffer, mImpl->mBuffer, copyLen );
 				buffer[ copyLen ] = '\0';
 
-				mBufferLen = 0;
+				mImpl->mBufferLen = 0;
 			}
 			break;
 		}
 	}
 
-	if( mLogSocket ) {
+	if( mImpl->mLogSocket ) {
 		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket(%d)::%s(\"%s\", %d)=%d",
-				mSocketFd, __func__, buffer, len, retLen );
+				mImpl->mSocketFd, __func__, buffer, len, retLen );
 	}
 
-	time( &mLastActiveTime );
+	time( &( mImpl->mLastActiveTime ) );
 
 	return retLen;
 }
@@ -230,7 +253,7 @@ int SP_NKSocket :: readn( void * buffer, size_t len )
 {
 	int retLen = 0;
 
-	for( time_t endTime = time( NULL ) + mSocketTimeout;
+	for( time_t endTime = time( NULL ) + mImpl->mSocketTimeout;
 			retLen < (int)len && time( NULL ) < endTime; ) {
 
 		int ioRet = read( (char*)buffer + retLen, len - retLen );
@@ -243,7 +266,7 @@ int SP_NKSocket :: readn( void * buffer, size_t len )
 		}
 	}
 
-	time( &mLastActiveTime );
+	time( &( mImpl->mLastActiveTime ) );
 
 	return retLen;
 }
@@ -252,28 +275,28 @@ int SP_NKSocket :: read( void * buffer, size_t len )
 {
 	int retLen = 0;
 
-	if( mBufferLen > 0 ) {
-		retLen = mBufferLen > len ? len : mBufferLen;
-		memcpy( buffer, mBuffer, retLen );
-		mBufferLen -= retLen;
+	if( mImpl->mBufferLen > 0 ) {
+		retLen = mImpl->mBufferLen > len ? len : mImpl->mBufferLen;
+		memcpy( buffer, mImpl->mBuffer, retLen );
+		mImpl->mBufferLen -= retLen;
 
-		if( mBufferLen > 0 ) {
-			memmove( mBuffer, mBuffer + retLen, mBufferLen );
+		if( mImpl->mBufferLen > 0 ) {
+			memmove( mImpl->mBuffer, mImpl->mBuffer + retLen, mImpl->mBufferLen );
 		}
 	}
 
-	for( time_t endTime = time( NULL ) + mSocketTimeout;
+	for( time_t endTime = time( NULL ) + mImpl->mSocketTimeout;
 			0 == retLen && time( NULL ) < endTime; ) {
 
-		int ioRet = realRecv( mSocketFd, (char*)buffer + retLen, len - retLen );
+		int ioRet = realRecv( mImpl->mSocketFd, (char*)buffer + retLen, len - retLen );
 		if( ioRet > 0 ) retLen += ioRet;
 
 		while( -1 == ioRet && ( EAGAIN == errno || EWOULDBLOCK == errno ) && time( NULL ) < endTime ) {
 			int events = 0;
-			int pollRet = poll( mSocketFd, POLLIN, &events, mSocketTimeout );
+			int pollRet = poll( mImpl->mSocketFd, POLLIN, &events, mImpl->mSocketTimeout );
 
 			if( pollRet > 0 && ( POLLIN & events ) ) {
-				ioRet = realRecv( mSocketFd, (char*)buffer + retLen, len - retLen );
+				ioRet = realRecv( mImpl->mSocketFd, (char*)buffer + retLen, len - retLen );
 				if( ioRet > 0 ) retLen += ioRet;
 			} else {
 				break;
@@ -286,14 +309,34 @@ int SP_NKSocket :: read( void * buffer, size_t len )
 		}
 	}
 
-	if( mLogSocket ) {
+	if( mImpl->mLogSocket ) {
 		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket(%d)::%s(..., %d)=%d",
-				mSocketFd, __func__, len, retLen );
+				mImpl->mSocketFd, __func__, len, retLen );
 	}
 
-	time( &mLastActiveTime );
+	time( &( mImpl->mLastActiveTime ) );
 
 	return retLen;
+}
+
+int SP_NKSocket :: unread( void * buffer, size_t len )
+{
+	int ret = -1;
+
+	if( mImpl->mBufferLen + len <= sizeof( mImpl->mBuffer ) ) {
+		memmove( mImpl->mBuffer + len, mImpl->mBuffer, mImpl->mBufferLen );
+		memmove( mImpl->mBuffer, buffer, len );
+		mImpl->mBufferLen += len;
+
+		ret = mImpl->mBufferLen;
+	}
+
+	if( mImpl->mLogSocket ) {
+		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket(%d)::%s(..., %d)=%d",
+				mImpl->mSocketFd, __func__, len, ret );
+	}
+
+	return ret;
 }
 
 int SP_NKSocket :: printf( const char * format, ... )
@@ -319,15 +362,15 @@ int SP_NKSocket :: printf( const char * format, ... )
 		}
 		retLen = writen( buffer, retLen );
 
-		if( mLogSocket ) {
+		if( mImpl->mLogSocket ) {
 			SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket(%i)::%s(\"%s\", ... )=%d",
-					mSocketFd, __func__, buffer, retLen );
+					mImpl->mSocketFd, __func__, buffer, retLen );
 		}
 
 		free( buffer );
 	}
 
-	time( &mLastActiveTime );
+	time( &( mImpl->mLastActiveTime ) );
 
 	return retLen;
 }
@@ -338,18 +381,18 @@ int SP_NKSocket :: writen( const void * buffer, size_t len )
 
 	//SP_NKLog::log( LOG_DEBUG, "SP_NKSocket(%i)::%s( ..., %d )", mSocketFd, __func__, len );
 
-	for( time_t endTime = time( NULL ) + mSocketTimeout;
+	for( time_t endTime = time( NULL ) + mImpl->mSocketTimeout;
 			retLen < (int)len && time( NULL ) < endTime; ) {
 
-		int ioRet = realSend( mSocketFd, (char*)buffer + retLen, len - retLen );
+		int ioRet = realSend( mImpl->mSocketFd, (char*)buffer + retLen, len - retLen );
 		if( ioRet > 0 ) retLen += ioRet;
 
 		while( -1 == ioRet && ( EAGAIN == errno || EWOULDBLOCK == errno ) && time( NULL ) < endTime ) {
 			int events = 0;
-			int pollRet = poll( mSocketFd, POLLOUT, &events, mSocketTimeout );
+			int pollRet = poll( mImpl->mSocketFd, POLLOUT, &events, mImpl->mSocketTimeout );
 
 			if( pollRet > 0 && ( POLLOUT & events ) ) {
-				ioRet = realSend( mSocketFd, (char*)buffer + retLen, len - retLen );
+				ioRet = realSend( mImpl->mSocketFd, (char*)buffer + retLen, len - retLen );
 				if( ioRet > 0 ) retLen += ioRet;
 			} else {
 				break;
@@ -363,44 +406,44 @@ int SP_NKSocket :: writen( const void * buffer, size_t len )
 		}
 	}
 
-	if( mLogSocket ) {
+	if( mImpl->mLogSocket ) {
 		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKSocket(%i)::%s( ..., %d )=%d",
-				mSocketFd, __func__, len, retLen );
+				mImpl->mSocketFd, __func__, len, retLen );
 	}
 
-	time( &mLastActiveTime );
+	time( &( mImpl->mLastActiveTime ) );
 
 	return retLen;
 }
 
 int SP_NKSocket :: probe( void * buffer, size_t len )
 {
-	int retLen = sizeof( mBuffer ) > len ? len : sizeof( mBuffer );
+	int retLen = sizeof( mImpl->mBuffer ) > len ? len : sizeof( mImpl->mBuffer );
 
-	if( retLen <= (int)mBufferLen ) {
-		memcpy( buffer, mBuffer, retLen );
+	if( retLen <= (int)mImpl->mBufferLen ) {
+		memcpy( buffer, mImpl->mBuffer, retLen );
 	} else {
-		int bufferLen = mBufferLen;
+		int bufferLen = mImpl->mBufferLen;
 		retLen = read( buffer, retLen );
 
 		// restore internal buffer
 		if( retLen > 0 ) {
-			memcpy( mBuffer + bufferLen, mBuffer, mBufferLen );
-			memcpy( mBuffer, buffer, bufferLen );
-			mBufferLen += bufferLen;
+			memcpy( mImpl->mBuffer + bufferLen, mImpl->mBuffer, mImpl->mBufferLen );
+			memcpy( mImpl->mBuffer, buffer, bufferLen );
+			mImpl->mBufferLen += bufferLen;
 		}
 	}
 
-	time( &mLastActiveTime );
+	time( &( mImpl->mLastActiveTime ) );
 
 	return retLen;
 }
 
 size_t SP_NKSocket :: peek( char ** const buffer )
 {
-	*buffer = mBuffer;
+	*buffer = mImpl->mBuffer;
 
-	return mBufferLen;
+	return mImpl->mBufferLen;
 }
 
 //===========================================================================

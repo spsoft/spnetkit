@@ -29,38 +29,48 @@ int SP_NKDotTermDataReader :: read( SP_NKSocket * socket )
 
 	int ret = 0;
 
-	static const int READ_BUFLEN = 8192;
+	static const int READ_BUFLEN = 8200;
 
 	char * buff = (char *)malloc( READ_BUFLEN );
 	assert( buff != NULL );
 	{
-		char last5[ 10 ];
+		char last5[ 8 ] = { 0 };
 		memset( last5, (int)'\0', sizeof( last5 ) );
 
 		for( ; 0 == ret; ) {
-			memset( buff, 0, READ_BUFLEN );
+			memcpy( buff, last5, sizeof( last5 ) );
 
-			int readBytes = socket->read( buff, READ_BUFLEN );
+			char * readBuff = buff + sizeof( last5 );
+			int readBytes = socket->read( readBuff, READ_BUFLEN - sizeof( last5 ) );
 
 			if( readBytes > 0 ) {
-				mBuffer->append( buff, readBytes );
-
-				if ( readBytes >= (int) sizeof( last5 ) - 1 ) {
-					memmove( last5, buff + readBytes - sizeof( last5 ) + 1, sizeof( last5 ) - 1 );
-				} else {
-					memmove( last5, last5 + readBytes, sizeof( last5 ) - 1 - readBytes );
-					memmove( last5 + sizeof( last5 ) - 1 - readBytes, buff, readBytes );
+				char * endOfData = NULL;
+				for( int i = 0; i < readBytes; ++i ) {
+					char * pos = readBuff - 1 + i;
+					if( '.' == *pos && *(pos - 1) == '\n'
+							&& ( *(pos + 1) == '\n' || *(pos + 1) == '\r' ) ) {
+						endOfData = pos + 1;
+						if( '\r' == *endOfData ) ++endOfData;
+						break;
+					}
 				}
 
-				char * dot = strrchr( last5, (int)'.' );
-				if( NULL == dot ) {
-					dot = (char *)memchr( last5, (int)'.', sizeof( last5 ) - 1 );
-				}
-				if( dot != NULL && dot != last5 
-						&& (*(dot - 1) == '\n' || *(dot - 1) == '\r')
-						&& (*(dot + 1) == '\r' || *(dot + 1) == '\n') ) {
+				if( NULL != endOfData ) {
+					assert( socket->unread( endOfData + 1, readBuff + readBytes - endOfData - 1 ) >= 0 );
+					mBuffer->append( readBuff, endOfData - readBuff + 1 );
 					break;
+				} else {
+					mBuffer->append( readBuff, readBytes );
+
+					if ( readBytes >= (int) sizeof( last5 ) ) {
+						memmove( last5, readBuff + readBytes - sizeof( last5 ), sizeof( last5 ) );
+					} else {
+						memmove( last5, last5 + readBytes, sizeof( last5 ) - readBytes );
+						memmove( last5 + sizeof( last5 ) - readBytes, readBuff, readBytes );
+					}
 				}
+
+				char * dot = (char *)memchr( last5, (int)'.', sizeof( last5 ) - 1 );
 
 				// deal with empty content, only receive ".<CRLF>"
 				if( dot != NULL && dot != last5
@@ -75,7 +85,7 @@ int SP_NKDotTermDataReader :: read( SP_NKSocket * socket )
 	}
 	free( buff );
 
-	SP_NKLog::log( LOG_DEBUG, "RETN: %s = %d", __func__, ret );
+	SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKDotTermDataReader::%s = %d", __func__, ret );
 
 	return ret;
 }
