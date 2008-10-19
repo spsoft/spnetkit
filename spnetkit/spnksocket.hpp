@@ -8,6 +8,8 @@
 
 #include <sys/socket.h>
 
+typedef struct tagSP_NKSocketImpl SP_NKSocketImpl_t;
+
 class SP_NKSocket {
 public:
 	static const int DEFAULT_SOCKET_TIMEOUT  = 600;
@@ -69,6 +71,15 @@ public:
 	int readn( void * buffer, size_t len );
 
 	/**
+	 * push buffer back to stream, where it is available for subsequent read
+	 * operations. Pushed back characters will be returned in reverse order.
+	 *
+	 * @return -1 : too many data, change nothing
+	 * @return >= 0 : unread bytes
+	 */
+	int unread( void * buffer, size_t len );
+
+	/**
 	 * @return -1 : error, and errno is set appropriately
 	 * @return > 0 : send bytes
 	 */
@@ -103,19 +114,7 @@ protected:
 
 private:
 
-	int mSocketFd;
-	int mToBeOwner;
-	char mPeerName[ 64 ];
-	int mPeerPort;
-
-	char mBuffer[ 8192 ];
-	size_t mBufferLen;
-
-	int mSocketTimeout;
-
-	time_t mLastActiveTime;
-
-	int mLogSocket;
+	SP_NKSocketImpl_t * mImpl;
 };
 
 class SP_NKTcpSocket : public SP_NKSocket {
