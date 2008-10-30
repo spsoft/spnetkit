@@ -14,6 +14,8 @@ class SP_NKHttpProtocol {
 public:
 	enum { MAX_RECV_LEN = 8192 };
 
+	enum { SC_NOT_MODIFIED = 304 };
+
 	// @return 0 : socket ok, -1 : socket error
 	static int get( SP_NKSocket * socket,
 		const SP_NKHttpRequest * req,
@@ -28,6 +30,9 @@ public:
 	static int head( SP_NKSocket * socket,
 		const SP_NKHttpRequest * req,
 		SP_NKHttpResponse * resp );
+
+	static void urlencode( const char * source,
+		char * dest, size_t length );
 
 private:
 	// @return 1 : socket ok, -1 : socket error
