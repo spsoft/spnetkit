@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #include "spnkhttpcli.hpp"
 #include "spnkhttpmsg.hpp"
@@ -25,7 +26,7 @@ int SP_NKHttpProtocol :: get( SP_NKSocket * socket,
 
 	if( sockRet > 0 ) {
 		sockRet = recvRespHeader( socket, resp );
-		if( sockRet > 0 ) {
+		if( sockRet > 0 && SC_NOT_MODIFIED != resp->getStatusCode() ) {
 			sockRet = recvRespBody( socket, resp );
 		}
 	}
@@ -52,7 +53,7 @@ int SP_NKHttpProtocol :: post( SP_NKSocket * socket,
 
 	if( sockRet > 0 ) {
 		sockRet = recvRespHeader( socket, resp );
-		if( sockRet > 0 ) {
+		if( sockRet > 0 && SC_NOT_MODIFIED != resp->getStatusCode() ) {
 			sockRet = recvRespBody( socket, resp );
 		}
 	}
@@ -72,11 +73,64 @@ int SP_NKHttpProtocol :: head( SP_NKSocket * socket,
 	return sockRet > 0 ? 0 : -1;
 }
 
+void SP_NKHttpProtocol :: urlencode( const char * source, char * dest, size_t length )
+{
+	const char urlencstring[] = "0123456789abcdef";
+
+	const char *p = source;
+	char *q = dest;
+	size_t n = 0;
+
+	for( ; *p && n<length ; p++,q++,n++) {
+		if(isalnum((int)*p)) {
+			*q = *p;
+		} else if(*p==' ') {
+			*q = '+';
+		} else {
+			if(n>length-3) {
+				q++;
+				break;
+			}
+
+			*q++ = '%';
+			int digit = *p >> 4;
+			*q++ = urlencstring[digit];
+			digit = *p & 0xf;
+			*q = urlencstring[digit];
+			n+=2;
+		}
+	}
+
+	*q=0;
+}
+
 int SP_NKHttpProtocol :: sendReqHeader( SP_NKSocket * socket,
 		const char * method, const SP_NKHttpRequest * req )
 {
+	const char * url = NULL;
+
+	if( req->getParamCount() > 0 ) {
+		SP_NKStringList buffer;
+		buffer.append( req->getURI() );
+		buffer.append( "?" );
+
+		char tmp[ 1024 ] = { 0 };
+		for( int i = 0; i < req->getParamCount(); i++ ) {
+			if( i > 0 ) buffer.append( "&" );
+			urlencode( req->getParamName(i), tmp, sizeof( tmp ) - 1 );
+			buffer.append( tmp );
+			buffer.append( "=" );
+			urlencode( req->getParamValue(i), tmp, sizeof( tmp ) - 1 );
+			buffer.append( tmp );
+		}
+
+		url = buffer.getMerge();
+	} else {
+		url = req->getURI();
+	}
+
 	int sockRet = socket->printf( "%s %s %s\r\n", method,
-			req->getURI(), req->getVersion() );
+			url, req->getVersion() );
 
 	for( int i = 0; i < req->getHeaderCount() && sockRet > 0; i++ ) {
 		const char * name = req->getHeaderName( i );
@@ -86,6 +140,8 @@ int SP_NKHttpProtocol :: sendReqHeader( SP_NKSocket * socket,
 			sockRet = socket->printf( "%s: %s\r\n", name, val );
 		}
 	}
+
+	if( url != req->getURI() ) free( (void*)url );
 
 	return sockRet > 0 ? 1 : -1;
 }
