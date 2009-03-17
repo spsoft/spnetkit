@@ -15,6 +15,7 @@ SP_NKBase64EncodedBuffer :: SP_NKBase64EncodedBuffer( const void * plainBuffer, 
 {
 	mLength = len * 4 / 3 + 16;
 	mBuffer = (char*)malloc( mLength );
+	memset( mBuffer, 0, mLength );
 
 	char * s = (char*)plainBuffer;
 	size_t n = len;
@@ -72,6 +73,7 @@ SP_NKBase64DecodedBuffer :: SP_NKBase64DecodedBuffer( const char * encodedBuffer
 {
 	mLength = len * 3 / 4 + 16;
 	mBuffer = (char*)malloc( mLength );
+	memset( mBuffer, 0, mLength );
 
 	const char * s = encodedBuffer;
 	char * t = mBuffer;

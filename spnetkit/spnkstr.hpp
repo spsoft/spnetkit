@@ -12,6 +12,9 @@ public:
 
 	static size_t strlcpy( char *dst, const char *src, size_t dst_sz );
 
+	static int getToken( const char * src, int index, char * dest, int len,
+		char delimiter = ' ', const char ** next = 0 );
+
 private:
 	SP_NKStr();
 };

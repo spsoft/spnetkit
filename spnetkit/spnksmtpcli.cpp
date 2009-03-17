@@ -327,13 +327,17 @@ int SP_NKSmtpProtocol :: isPermanentNegativeCompletionReply()
 	return replyCode >= 500 && replyCode < 600;
 }
 
-int SP_NKSmtpProtocol :: readReply( SP_NKSocket * socket, char * reply, int replySize )
+int SP_NKSmtpProtocol :: readReply( SP_NKSocket * socket,
+		char * reply, int replySize, SP_NKStringList * replyList )
 {
 	int ret = -1;
 
 	for( ; ; ) {
 		memset( reply, 0, replySize );
 		ret = socket->readline( reply, replySize );
+
+		if( NULL != replyList ) replyList->append( reply );
+
 		if( '-' == reply[ 3 ] ) {
 			SP_NKLog::log( LOG_DEBUG, "DEBUG: %s", reply );
 		} else {
@@ -367,12 +371,13 @@ int SP_NKSmtpProtocol :: welcome()
 	return ret;
 }
 
-int SP_NKSmtpProtocol :: doCommand( const char * command, const char * tag )
+int SP_NKSmtpProtocol :: doCommand( const char * command, const char * tag,
+		SP_NKStringList * replyList )
 {
 	int ret = -1;
 
 	if( mSocket->printf( "%s", command ) > 0 ) {
-		if( readReply( mSocket, mLastReply, sizeof( mLastReply ) ) > 0 ) {
+		if( readReply( mSocket, mLastReply, sizeof( mLastReply ), replyList ) > 0 ) {
 			ret = 0;
 		} else {
 			if( SPNK_ETIMEDOUT == errno ) {
@@ -410,12 +415,12 @@ int SP_NKSmtpProtocol :: helo( const char * heloArg )
 	return doCommand( cmd, "HELO" );
 }
 
-int SP_NKSmtpProtocol :: ehlo( const char * heloArg )
+int SP_NKSmtpProtocol :: ehlo( const char * heloArg, SP_NKStringList * replyList )
 {
 	char cmd[ 256 ] = { 0 };
 
 	snprintf( cmd, sizeof( cmd ), "EHLO %s\r\n", heloArg );
-	return doCommand( cmd, "EHLO" );
+	return doCommand( cmd, "EHLO", replyList );
 }
 
 int SP_NKSmtpProtocol :: auth( const char * username, const char * password )

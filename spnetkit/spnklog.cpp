@@ -76,7 +76,7 @@ void spnk_openlog (const char *ident , int option , int facility)
 SP_NKLog::LogFunc_t SP_NKLog::mFunc = spnk_syslog;
 int SP_NKLog::mLevel = LOG_NOTICE;
 int SP_NKLog::mIsLogTimeStamp = 1;
-int SP_NKLog::mIsLogPriName = 1;
+int SP_NKLog::mIsLogPriName = 0;
 
 #ifndef  LOG_PRI
 #define LOG_PRI(p)  ((p) & LOG_PRIMASK)
