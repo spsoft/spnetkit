@@ -20,6 +20,49 @@
 #include "spnkfile.hpp"
 #include "spnkstr.hpp"
 
+int SP_NKIniFile :: BatchLoad( SP_NKIniFile * iniFile, SP_NKIniItemInfo_t * infoArray )
+{
+	int ret = 0;
+
+	for( int i = 0; ; i++ ) {
+		SP_NKIniItemInfo_t * iter = &( infoArray[i] );
+		if( NULL == iter->mSection ) break;
+
+		iter->mExist = 0;
+
+		char value[ 1024 ] = { 0 };
+
+		if( NULL != iniFile->getValue( iter->mSection, iter->mKey, value, sizeof( value ) ) ) {
+			iter->mExist = 1;
+
+			if( eSP_NKIniItemInt == iter->mType ) {
+				*(int*)iter->mValue = atoi( value );
+			} else {
+				SP_NKStr::strlcpy( (char*)iter->mValue, value, iter->mSize );
+			}
+		} else {
+			SP_NKLog::log( LOG_ERR, "SP_NKIniFile::BatchLoad miss [%s]%s", iter->mSection, iter->mKey );
+			ret = -1;
+		}
+	}
+
+	return ret;
+}
+
+void SP_NKIniFile :: BatchDump( SP_NKIniItemInfo_t * infoArray )
+{
+	for( int i = 0; ; i++ ) {
+		SP_NKIniItemInfo_t * iter = &( infoArray[i] );
+		if( NULL == iter->mSection ) break;
+
+		if( eSP_NKIniItemInt == iter->mType ) {
+			SP_NKLog::log( LOG_DEBUG, "[%s]%s = %d", iter->mSection, iter->mKey, *(int*)iter->mValue );
+		} else {
+			SP_NKLog::log( LOG_DEBUG, "[%s]%s = %s", iter->mSection, iter->mKey, iter->mValue );
+		}
+	}
+}
+
 SP_NKIniFile :: SP_NKIniFile()
 {
 	mFile = new SP_NKStringList();

@@ -3,6 +3,10 @@ include ../port/port.mk
 
 #--------------------------------------------------------------------
 
+ifeq ($(origin version), undefined)
+	version = 0.3.0
+endif
+
 LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
 		spnktime.o spnkhash.o \
 		spnksocket.o spnklist.o spnkreader.o \
@@ -14,7 +18,7 @@ LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
 
 SONAME = libspnetkit.so.$(version)
 
-TARGET =  libspnetkit.so \
+TARGET =  libspnetkit.so libspnetkit.a \
 		testini \
 		testpop3cli \
 		testsmtpcli \
@@ -50,6 +54,9 @@ libspnetkit_s.so: $(SONAME_S)
 $(SONAME): $(LIBOBJS)
 	$(LINKER) $(SOFLAGS) $^ -o $@
 	$(INSTLIB)
+
+libspnetkit.a: $(LIBOBJS)
+	$(AR) $@ $^
 
 $(SONAME_S): spnksslsocket.o
 	$(LINKER) $(SOFLAGS) $^ -o $@

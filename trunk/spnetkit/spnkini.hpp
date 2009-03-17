@@ -11,7 +11,26 @@
 class SP_NKStringList;
 class SP_NKVector;
 
+enum { eSP_NKIniItemInt = 1, eSP_NKIniItemStr = 2 };
+
+typedef struct tagSP_NKIniItemInfo {
+	int mType;
+	const char * mSection;
+	const char * mKey;
+	void * mValue;
+	int mSize;
+	int mExist;
+} SP_NKIniItemInfo_t;
+
+#define SP_NK_INI_ITEM_INT(section,key,value) {eSP_NKIniItemInt,section,key,&value,sizeof(value),0}
+#define SP_NK_INI_ITEM_STR(section,key,value) {eSP_NKIniItemStr,section,key,value,sizeof(value),0}
+#define SP_NK_INI_ITEM_END {0,0,0,0,0,0}
+
 class SP_NKIniFile {
+public:
+	static int BatchLoad( SP_NKIniFile * iniFile, SP_NKIniItemInfo_t * infoArray );
+	static void BatchDump( SP_NKIniItemInfo_t * infoArray );
+
 public:
 	SP_NKIniFile();
 	~SP_NKIniFile();

@@ -12,6 +12,7 @@ class SP_NKSocket;
 class SP_NKSmtpProtocol;
 class SP_NKSmtpAddr;
 class SP_NKSmtpAddrList;
+class SP_NKStringList;
 
 class SP_NKSmtpClient {
 public:
@@ -83,7 +84,7 @@ public:
 	// @return 0 : socket ok, -1 : socket fail
 	int welcome();
 	int helo( const char * heloArg );
-	int ehlo( const char * heloArg );
+	int ehlo( const char * heloArg, SP_NKStringList * replyList = 0 );
 	int auth( const char * username, const char * password );
 	int mail( const char * from );
 	int rcpt( const char * rcpt );
@@ -92,9 +93,11 @@ public:
 	int quit();
 
 private:
-	static int readReply( SP_NKSocket * socket, char * reply, int replySize );
+	static int readReply( SP_NKSocket * socket, char * reply, int replySize,
+			SP_NKStringList * replyList = 0 );
 
-	int doCommand( const char * command, const char * tag );
+	int doCommand( const char * command, const char * tag,
+			SP_NKStringList * replyList = 0 );
 
 	SP_NKSocket * mSocket;
 	char mLastReply[ 512 ];
