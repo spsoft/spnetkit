@@ -15,7 +15,7 @@ LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
 		spnksmtpaddr.o spnksmtpcli.o \
 		spnkhttpmsg.o spnkhttpcli.o \
 		spnkmemobj.o spnkmemcli.o \
-		spnkicapcli.o
+		spnkicapcli.o spnkmiltercli.o
 
 SONAME = libspnetkit.so.$(version)
 
@@ -28,7 +28,8 @@ TARGET =  libspnetkit.so libspnetkit.a \
 		testmemcli \
 		testendpoint \
 		testsocketpool \
-		testicapcli
+		testicapcli \
+		testmiltercli
 
 SONAME_S = libspnetkit_s.so.$(version)
 
@@ -95,6 +96,9 @@ testsocketpool: testsocketpool.o
 	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
 
 testicapcli: testicapcli.o
+	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+
+testmiltercli: testmiltercli.o
 	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
 
 dist: clean spnetkit-$(version).src.tar.gz
