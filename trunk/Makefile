@@ -3,7 +3,12 @@ include port/port.mk
 
 #--------------------------------------------------------------------
 
+ifeq ($(origin version), undefined)
+	version = 0.3.0
+endif
+
 all:
+	mkdir -p lib
 	@( cd spnetkit; make )
 
 ssl:
@@ -18,5 +23,5 @@ spnetkit-$(version).src.tar.gz:
 	@(cd ..; rm spnetkit-$(version))
 
 clean:
-	@( cd spnetkit; make clean )
+	@( rm -rf lib/*; cd spnetkit; make clean )
 

@@ -17,8 +17,6 @@ LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
 		spnkmemobj.o spnkmemcli.o \
 		spnkicapcli.o spnkmiltercli.o
 
-SONAME = libspnetkit.so.$(version)
-
 TARGET =  libspnetkit.so libspnetkit.a \
 		testini \
 		testpop3cli \
@@ -31,9 +29,7 @@ TARGET =  libspnetkit.so libspnetkit.a \
 		testicapcli \
 		testmiltercli
 
-SONAME_S = libspnetkit_s.so.$(version)
-
-TARGET_S = libspnetkit_s.so \
+TARGET_S = libspnetkit_s.so libspnetkit_s.a \
 		testpop3cli_s \
 		testsmtpcli_s
 
@@ -48,21 +44,20 @@ all: $(TARGET)
 
 ssl: $(TARGET_S)
 
-libspnetkit.so: $(SONAME)
-	cd ../lib; test -f $@ || ln -s $< $@; exit 0;
-
-libspnetkit_s.so: $(SONAME_S)
-	cd ../lib; test -f $@ || ln -s $< $@; exit 0;
-
-$(SONAME): $(LIBOBJS)
+libspnetkit.so: $(LIBOBJS)
 	$(LINKER) $(SOFLAGS) $^ -o $@
 	$(INSTLIB)
 
 libspnetkit.a: $(LIBOBJS)
 	$(AR) $@ $^
+	$(INSTLIB)
 
-$(SONAME_S): spnksslsocket.o
+libspnetkit_s.so: spnksslsocket.o
 	$(LINKER) $(SOFLAGS) $^ -o $@
+	$(INSTLIB)
+
+libspnetkit_s.a: spnksslsocket.o
+	$(AR) $@ $^
 	$(INSTLIB)
 
 testini: testini.o

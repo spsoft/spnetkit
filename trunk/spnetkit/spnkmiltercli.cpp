@@ -3,10 +3,11 @@
  * For license terms, see the file COPYING along with this library.
  */
 
-#include <netinet/in.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "spnkporting.hpp"
 
 #include "spnksocket.hpp"
 #include "spnklog.hpp"

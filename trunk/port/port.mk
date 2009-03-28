@@ -11,10 +11,6 @@ LINKER = $(CC)
 LINT = lint -c
 RM = /bin/rm -f
 
-ifeq ($(origin version), undefined)
-	version = 0.3.0
-endif
-
 OS=$(shell uname)
 
 ifeq ($(OS), SunOS)
@@ -22,7 +18,7 @@ ifeq ($(OS), SunOS)
 	CFLAGS += -D_POSIX_THREAD_PROCESS_SHARED
 endif
 
-INSTLIB=(cp $@ ../lib)
+INSTLIB=(mkdir -p ../lib; cp $@ ../lib)
 
 #--------------------------------------------------------------------
 
