@@ -6,6 +6,8 @@
 #ifndef __spnkstr_hpp__
 #define __spnkstr_hpp__
 
+#include <ctype.h>
+
 class SP_NKStr {
 public:
 	static char * strsep( char ** stringp, const char * delim );

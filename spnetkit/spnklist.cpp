@@ -170,7 +170,7 @@ int SP_NKStringList :: seek( const char * sample ) const
 char * SP_NKStringList :: getMerge( int * len, const char * sep )
 {
 	int sepLen = 0, i = 0;
-	if( NULL != sep && '\0' != sep ) sepLen = strlen( sep );
+	if( NULL != sep && '\0' != *sep ) sepLen = strlen( sep );
 
 	int mergeSize = sepLen * ( mList->getCount() - 1 );
 	for( i = 0; i < mList->getCount(); i++ ) {
