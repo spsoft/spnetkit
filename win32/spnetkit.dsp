@@ -109,6 +109,10 @@ SOURCE=..\spnetkit\spnkhttpmsg.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\spnetkit\spnkicapcli.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\spnetkit\spnkini.cpp
 # End Source File
 # Begin Source File
@@ -126,6 +130,10 @@ SOURCE=..\spnetkit\spnkmemcli.cpp
 # Begin Source File
 
 SOURCE=..\spnetkit\spnkmemobj.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\spnetkit\spnkmiltercli.cpp
 # End Source File
 # Begin Source File
 
@@ -181,6 +189,10 @@ SOURCE=..\spnetkit\spnkfile.hpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\spnetkit\spnkgetopt.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\spnetkit\spnkhash.hpp
 # End Source File
 # Begin Source File
@@ -190,6 +202,10 @@ SOURCE=..\spnetkit\spnkhttpcli.hpp
 # Begin Source File
 
 SOURCE=..\spnetkit\spnkhttpmsg.hpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\spnetkit\spnkicapcli.hpp
 # End Source File
 # Begin Source File
 
@@ -210,6 +226,10 @@ SOURCE=..\spnetkit\spnkmemcli.hpp
 # Begin Source File
 
 SOURCE=..\spnetkit\spnkmemobj.hpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\spnetkit\spnkmiltercli.hpp
 # End Source File
 # Begin Source File
 

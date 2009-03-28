@@ -6,7 +6,7 @@
 #ifndef __spnkmiltercli_hpp__
 #define __spnkmiltercli_hpp__
 
-#include <stdint.h>
+#include "spnkporting.hpp"
 
 class SP_NKSocket;
 
