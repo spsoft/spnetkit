@@ -574,11 +574,50 @@ int SP_NKTcpSocket :: openSocket( const char * ip, int port,
 	return socketFd;
 }
 
+int SP_NKTcpSocket :: openSocket( const char * path,
+		const struct timeval * connectTimeout )
+{
+	if( mLogSocketDefault ) {
+		SP_NKLog::log( LOG_DEBUG, "SP_NKTcpSocket::openSocket( %s, {%d,%d} )",
+				path, connectTimeout->tv_sec, connectTimeout->tv_usec );
+	}
+
+	int socketFd = socket( AF_UNIX, SOCK_STREAM, IPPROTO_IP );
+
+	if( socketFd < 0 ) {
+		SP_NKLog::log( LOG_WARNING, "SP_NKTcpSocket::openSocket().socket()=%d", socketFd );
+		return -1;
+	}
+
+	setNonblocking( socketFd );
+
+	struct sockaddr_un unAddr;
+	memset( &unAddr, 0, sizeof( unAddr ) );
+	unAddr.sun_family = AF_UNIX;
+
+	strncpy( unAddr.sun_path, path, sizeof( unAddr.sun_path ) - 1 );
+
+	int ret = connectNonblock( socketFd, (struct sockaddr*)&unAddr,
+			sizeof( unAddr ), connectTimeout );
+
+	if( 0 != ret ) {
+		::close( socketFd );
+		socketFd = -1;
+	}
+
+	if( mLogSocketDefault ) {
+		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKTcpSocket::openSocket( %s, {%d,%d}  )=%d",
+				path, connectTimeout->tv_sec, connectTimeout->tv_usec, socketFd );
+	}
+
+	return socketFd;
+}
+
 int SP_NKTcpSocket :: connectNonblock( int socketFd, struct sockaddr * addr,
 	socklen_t addrLen, const struct timeval * connectTimeout )
 {
 	if( mLogSocketDefault ) {
-		SP_NKLog::log( LOG_DEBUG, "SP_NKTcpSocket(%d)::connectNonblock()", socketFd );
+		SP_NKLog::log( LOG_DEBUG, "Socket(%d)::connectNonblock()", socketFd );
 	}
 
 	int error = 0;
@@ -590,8 +629,8 @@ int SP_NKTcpSocket :: connectNonblock( int socketFd, struct sockaddr * addr,
 #endif
 
 	if( n < 0 && ( errno != SPNK_EINPROGRESS && errno != SPNK_EWOULDBLOCK ) ) {
-		SP_NKLog::log( LOG_WARNING, "SP_NKTcpSocket(%d)::connectNonblock().connect()=%d",
-			socketFd, n );
+		SP_NKLog::log( LOG_WARNING, "Socket(%d)::connectNonblock().connect()=%d, errno %d, %s",
+			socketFd, n, errno, strerror( errno ) );
 		error = -1;
 	}
 
@@ -603,19 +642,19 @@ int SP_NKTcpSocket :: connectNonblock( int socketFd, struct sockaddr * addr,
 		if( ( SPNK_POLLOUT & revents ) || ( SPNK_POLLIN & revents ) ) {
 			socklen_t len = sizeof( error );
 			if( getsockopt( socketFd, SOL_SOCKET, SO_ERROR, (char*)&error, &len ) < 0 ) {
-				SP_NKLog::log( LOG_WARNING, "SP_NKTcpSocket(%d)::connectNonblock().getsockopt() < 0",
+				SP_NKLog::log( LOG_WARNING, "Socket(%d)::connectNonblock().getsockopt() < 0",
 					socketFd );
 				error = -1;
 			}
 		} else {
-			SP_NKLog::log( LOG_WARNING, "SP_NKTcpSocket(%d)::connectNonblock().poll()=%d, revents=%d",
+			SP_NKLog::log( LOG_WARNING, "Socket(%d)::connectNonblock().poll()=%d, revents=%d",
 				socketFd, n, revents );
 			error = -1;
 		}
 	}
 
 	if( mLogSocketDefault ) {
-		SP_NKLog::log( LOG_DEBUG, "RETN: SP_NKTcpSocket(%d)::connectNonblock()=%d", socketFd, error );
+		SP_NKLog::log( LOG_DEBUG, "RETN: Socket(%d)::connectNonblock()=%d", socketFd, error );
 	}
 
 	return error;
@@ -653,6 +692,21 @@ SP_NKTcpSocket :: SP_NKTcpSocket( const char * ip, int port,
 	}
 
 	int fd = openSocket( ip, port, &tv, bindAddr );
+	init( fd, 1 );
+}
+
+SP_NKTcpSocket :: SP_NKTcpSocket( const char * path, const struct timeval * connectTimeout )
+{
+	struct timeval tv;
+
+	if( NULL != connectTimeout ) {
+		tv = *connectTimeout;
+	} else {
+		tv.tv_sec = DEFAULT_CONNECT_TIMEOUT;
+		tv.tv_usec = 0;
+	}
+
+	int fd = openSocket( path, &tv );
 	init( fd, 1 );
 }
 

@@ -126,6 +126,9 @@ public:
 	static int openSocket( const char * ip, int port,
 		const struct timeval * connectTimeout, const char * bindAddr );
 
+	static int openSocket( const char * path,
+		const struct timeval * connectTimeout );
+
 public:
 	SP_NKTcpSocket( int socketFd );
 
@@ -134,6 +137,8 @@ public:
 
 	SP_NKTcpSocket( const char * ip, int port,
 			const struct timeval * connectTimeout, const char * bindAddr = 0 );
+
+	SP_NKTcpSocket( const char * path, const struct timeval * connectTimeout = 0 );
 
 	virtual ~SP_NKTcpSocket();
 
