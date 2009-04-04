@@ -24,17 +24,21 @@
 # define SMFIP_NOHDRS    0x00000020L /* MTA should not send headers */
 # define SMFIP_NOEOH     0x00000040L /* MTA should not send EOH */
 
-SP_NKMilterProtocol :: SP_NKMilterProtocol( SP_NKSocket * socket )
+SP_NKMilterProtocol :: SP_NKMilterProtocol( SP_NKSocket * socket, SP_NKNameValueList * macroList )
 {
 	mSocket = socket;
+	mMacroList = macroList;
 
 	mFilterVersion = 0;
 	mFilterFlags = 0;
 	mProtoFlags = 0;
+
+	memset( &mLastReply, 0, sizeof( mLastReply ) );
 }
 
 SP_NKMilterProtocol :: ~SP_NKMilterProtocol()
 {
+	resetReply();
 }
 
 int SP_NKMilterProtocol :: negotiate( uint32_t filterVersion,
@@ -74,9 +78,48 @@ int SP_NKMilterProtocol :: negotiate( uint32_t filterVersion,
 	return sockRet > 0 ? 0 : -1;
 }
 
+char * SP_NKMilterProtocol :: getMacroList( char cmd, Macro_t macroArray[], int * len )
+{
+	SP_NKStringList list;
+	list.append( "" );   // placeholder for cmd
+
+	for( int i = 0; i < 100; i++ ) {
+		Macro_t * iter = &(macroArray[i]);
+
+		if( NULL == iter->mName ) break;
+
+		int index = -1;
+
+		if( NULL != mMacroList ) index = mMacroList->seek( iter->mName );
+
+		if( index >= 0 ) {
+			list.append( iter->mName );
+			list.append( mMacroList->getValue( index ) );
+		} else if( '\0' != *iter->mValue ) {
+			list.append( iter->mName );
+			list.append( iter->mValue );
+		} else {
+			// don't send this macro
+		}
+	}
+
+	char * ret = list.getMerge( len, "\t" );
+
+	for( int i = 0; i < *len; i++ ) {
+		if( '\t' == ret[i] ) ret[i] = '\0';
+	}
+
+	ret[0] = cmd;
+
+	return ret;
+}
+
 int SP_NKMilterProtocol :: connect( const char * hostname, const char * addr, short port )
 {
-	if( mProtoFlags & SMFIP_NOCONNECT ) return 0;
+	if( mProtoFlags & SMFIP_NOCONNECT ) {
+		resetReply();
+		return 0;
+	}
 
 	char ourhost[ 256 ] = { 0 };
 	gethostname( ourhost, sizeof( ourhost ) );
@@ -84,23 +127,15 @@ int SP_NKMilterProtocol :: connect( const char * hostname, const char * addr, sh
 	char remoteid[ 512 ] = { 0 };
 	snprintf( remoteid, sizeof( remoteid ), "%.128s [%.64s]", hostname, addr );
 
-	SP_NKStringList list;
-
-	list.append( "Cj" );
-	list.append( ourhost );
-	list.append( "_" );
-	list.append( remoteid );
-	list.append( "{daemon_name}" );
-	list.append( "spngsmtp" );
-	list.append( "{if_name}" );
-	list.append( ourhost );
+	//'C'	SMFIC_CONNECT	$_ $j ${daemon_name} ${if_name} ${if_addr}
+	Macro_t macroArray[] = {
+		{ "_", remoteid }, { "j", ourhost }, { "{daemon_name}", "spngsmtp" },
+		{ "{if_name}", ourhost }, { "{if_addr}", "" },
+		{ NULL, NULL }
+	};
 
 	int len = 0;
-	char * macro = list.getMerge( &len, "\t" );
-
-	for( int i = 0; i < len; i++ ) {
-		if( '\t' == macro[i] ) macro[i] = '\0';
-	}
+	char * macro = getMacroList( 'C', macroArray, &len );
 
 	int sockRet = sendCmd( 'D', macro, len );
 
@@ -128,7 +163,10 @@ int SP_NKMilterProtocol :: connect( const char * hostname, const char * addr, sh
 
 int SP_NKMilterProtocol :: helo( const char * args )
 {
-	if( mProtoFlags & SMFIP_NOHELO ) return 0;
+	if( mProtoFlags & SMFIP_NOHELO ) {
+		resetReply();
+		return 0;
+	}
 
 	int sockRet = sendCmd( 'H', args, strlen( args ) + 1 );
 
@@ -139,7 +177,10 @@ int SP_NKMilterProtocol :: helo( const char * args )
 
 int SP_NKMilterProtocol :: mail( const char * id, const char * sender )
 {
-	if( mProtoFlags & SMFIP_NOMAIL ) return 0;
+	if( mProtoFlags & SMFIP_NOMAIL ) {
+		resetReply();
+		return 0;
+	}
 
 	char tmp[ 128 ] = { 0 };
 
@@ -148,23 +189,19 @@ int SP_NKMilterProtocol :: mail( const char * id, const char * sender )
 		sender = tmp;
 	}
 
-	SP_NKStringList list;
-
-	list.append( "Mi" );
-	list.append( id );
-	list.append( "{mail_mailer}" );
-	list.append( "local" );
-	list.append( "{mail_addr}" );
-	list.append( sender );
-	list.append( "{auth_type}" );
-	list.append( "" );
+	//'M'	SMFIC_MAIL	$i ${auth_type} ${auth_authen} ${auth_ssf}
+	//			${auth_author} ${mail_mailer} ${mail_host}
+	//			${mail_addr}
+	Macro_t macroArray[] = {
+		{ "i", id }, { "{auth_type", "" }, { "{auth_authen}", "" },
+		{ "{auth_ssf}", "" }, { "{auth_authro}", "" },
+		{ "{mail_mailer}", "local" }, { "{mail_host}", "" },
+		{ "{mail_addr}", sender },
+		{ NULL, NULL }
+	};
 
 	int len = 0;
-	char * macro = list.getMerge( &len, "\t" );
-
-	for( int i = 0; i < len; i++ ) {
-		if( '\t' == macro[i] ) macro[i] = '\0';
-	}
+	char * macro = getMacroList( 'M', macroArray, &len );
 
 	int sockRet = sendCmd( 'D', macro, len );
 
@@ -179,7 +216,10 @@ int SP_NKMilterProtocol :: mail( const char * id, const char * sender )
 
 int SP_NKMilterProtocol :: rcpt( const char * rcpt )
 {
-	if( mProtoFlags & SMFIP_NORCPT ) return 0;
+	if( mProtoFlags & SMFIP_NORCPT ) {
+		resetReply();
+		return 0;
+	}
 
 	char tmp[ 128 ] = { 0 };
 
@@ -188,21 +228,14 @@ int SP_NKMilterProtocol :: rcpt( const char * rcpt )
 		rcpt = tmp;
 	}
 
-	SP_NKStringList list;
-
-	list.append( "R{rcpt_mailer}" );
-	list.append( "local" );
-	list.append( "{rcpt_addr}" );
-	list.append( rcpt );
-	list.append( "{rcpt_host}" );
-	list.append( "" );
+	// 'R'	SMFIC_RCPT	${rcpt_mailer} ${rcpt_host} ${rcpt_addr}
+	Macro_t macroArray[] = {
+		{ "{rcpt_mailer}", "local" }, { "{rcpt_host", "" }, { "{rcpt_addr}", rcpt },
+		{ NULL, NULL }
+	};
 
 	int len = 0;
-	char * macro = list.getMerge( &len, "\t" );
-
-	for( int i = 0; i < len; i++ ) {
-		if( '\t' == macro[i] ) macro[i] = '\0';
-	}
+	char * macro = getMacroList( 'R', macroArray, &len );
 
 	int sockRet = sendCmd( 'D', macro, len );
 
@@ -217,7 +250,10 @@ int SP_NKMilterProtocol :: rcpt( const char * rcpt )
 
 int SP_NKMilterProtocol :: header( const char * name, const char * value )
 {
-	if( mProtoFlags & SMFIP_NOHDRS ) return 0;
+	if( mProtoFlags & SMFIP_NOHDRS ) {
+		resetReply();
+		return 0;
+	}
 
 	int len = strlen( name ) + 1 + strlen( value ) + 1 + 1;
 
@@ -238,7 +274,10 @@ int SP_NKMilterProtocol :: header( const char * name, const char * value )
 
 int SP_NKMilterProtocol :: endOfHeader()
 {
-	if( mProtoFlags & SMFIP_NOEOH ) return 0;
+	if( mProtoFlags & SMFIP_NOEOH ) {
+		resetReply();
+		return 0;
+	}
 
 	int sockRet = sendCmd( 'N', NULL, 0 );
 	if( sockRet > 0 ) readReply();
@@ -248,7 +287,10 @@ int SP_NKMilterProtocol :: endOfHeader()
 
 int SP_NKMilterProtocol :: body( const char * data, int len )
 {
-	if( mProtoFlags & SMFIP_NOBODY ) return 0;
+	if( mProtoFlags & SMFIP_NOBODY ) {
+		resetReply();
+		return 0;
+	}
 
 	int sockRet = sendCmd( 'B', data, len );
 	if( sockRet > 0 ) readReply();
@@ -258,7 +300,10 @@ int SP_NKMilterProtocol :: body( const char * data, int len )
 
 int SP_NKMilterProtocol :: endOfBody()
 {
-	if( mProtoFlags & SMFIP_NOBODY ) return 0;
+	if( mProtoFlags & SMFIP_NOBODY ) {
+		resetReply();
+		return 0;
+	}
 
 	int sockRet = sendCmd( 'E', NULL, 0 );
 	if( sockRet > 0 ) readReply();
@@ -304,13 +349,18 @@ int SP_NKMilterProtocol :: sendCmd( char cmd, const char * data, int len )
 	return sockRet;
 }
 
+void SP_NKMilterProtocol :: resetReply()
+{
+	if( NULL != mLastReply.mData ) free( mLastReply.mData );
+
+	memset( &mLastReply, 0, sizeof( Reply_t ) );
+}
+
 int SP_NKMilterProtocol :: readReply()
 {
 	int sockRet = 0;
 
-	if( NULL != mLastReply.mData ) free( mLastReply.mData );
-
-	memset( &mLastReply, 0, sizeof( Reply_t ) );
+	resetReply();
 
 	char prefix[ 16 ] = { 0 };
 
@@ -335,6 +385,18 @@ int SP_NKMilterProtocol :: readReply()
 SP_NKMilterProtocol::Reply_t * SP_NKMilterProtocol :: getLastReply()
 {
 	return &mLastReply;
+}
+
+const char * SP_NKMilterProtocol :: getReplyHeaderName()
+{
+	return mLastReply.mData;
+}
+
+const char * SP_NKMilterProtocol :: getReplyHeaderValue()
+{
+	char * ret = strchr( mLastReply.mData, '\0' );
+
+	return ret + 1;
 }
 
 uint32_t SP_NKMilterProtocol :: getFilterVersion()

@@ -6,9 +6,12 @@
 #ifndef __spnkmiltercli_hpp__
 #define __spnkmiltercli_hpp__
 
+#include <stdio.h>
+
 #include "spnkporting.hpp"
 
 class SP_NKSocket;
+class SP_NKNameValueList;
 
 /**
  * More detail about milter protocol, please refer
@@ -18,7 +21,7 @@ class SP_NKSocket;
 class SP_NKMilterProtocol
 {
 public:
-	SP_NKMilterProtocol( SP_NKSocket * socket );
+	SP_NKMilterProtocol( SP_NKSocket * socket, SP_NKNameValueList * macroList = 0 );
 	~SP_NKMilterProtocol();
 
 	// @return 0 : socket ok, -1 : socket fail
@@ -53,6 +56,10 @@ public:
 
 	Reply_t * getLastReply();
 
+	const char * getReplyHeaderName();
+
+	const char * getReplyHeaderValue();
+
 	uint32_t getFilterVersion();
 	uint32_t getFilterFlags();
 	uint32_t getProtoFlags();
@@ -63,9 +70,19 @@ private:
 
 	int sendCmd( char cmd, const char * data, int len );
 
+	void resetReply();
+
+	typedef struct tagMacro {
+		const char * mName;
+		const char * mValue;
+	} Macro_t;
+
+	char * getMacroList( char cmd, Macro_t macroArray[], int * len );
+
 private:
 	SP_NKSocket * mSocket;
 	Reply_t mLastReply;
+	SP_NKNameValueList * mMacroList;
 
 	unsigned long mFilterVersion;
 	unsigned long mFilterFlags;
