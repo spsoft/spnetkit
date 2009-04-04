@@ -52,5 +52,26 @@ private:
 	SP_NKVector * mList;
 };
 
+class SP_NKNameValueList {
+public:
+	SP_NKNameValueList();
+	~SP_NKNameValueList();
+
+	int getCount();
+
+	const char * getName( int index );
+	const char * getValue( int index );
+
+	void add( const char * name, const char * value );
+	int seek( const char * name );
+	int remove( int index );
+
+	void clean();
+
+private:
+	SP_NKStringList * mNameList;
+	SP_NKStringList * mValueList;
+};
+
 #endif
 

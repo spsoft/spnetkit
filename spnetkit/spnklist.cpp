@@ -207,3 +207,56 @@ void SP_NKStringList :: clean()
 	mList->clean();
 }
 
+//=============================================================================
+
+SP_NKNameValueList :: SP_NKNameValueList()
+{
+	mNameList = new SP_NKStringList();
+	mValueList = new SP_NKStringList();
+}
+
+SP_NKNameValueList :: ~SP_NKNameValueList()
+{
+	delete mNameList, mNameList = NULL;
+	delete mValueList, mValueList = NULL;
+}
+
+int SP_NKNameValueList :: getCount()
+{
+	return mNameList->getCount();
+}
+
+const char * SP_NKNameValueList :: getName( int index )
+{
+	return mNameList->getItem( index );
+}
+
+const char * SP_NKNameValueList :: getValue( int index )
+{
+	return mValueList->getItem( index );
+}
+
+void SP_NKNameValueList :: add( const char * name, const char * value )
+{
+	mNameList->append( name );
+	mValueList->append( value );
+}
+
+int SP_NKNameValueList :: seek( const char * name )
+{
+	return mNameList->seek( name );
+}
+
+int SP_NKNameValueList :: remove( int index )
+{
+	mValueList->remove( index );
+
+	return mNameList->remove( index );
+}
+
+void SP_NKNameValueList :: clean()
+{
+	mNameList->clean();
+	mValueList->clean();
+}
+

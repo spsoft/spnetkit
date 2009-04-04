@@ -10,10 +10,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
 #include "spnkgetopt.h"
+#include "spnklist.hpp"
 
 #include "spnkmiltercli.hpp"
 
@@ -21,7 +23,7 @@ int main( int argc, char * argv[] )
 {
 	SP_NKLog::init4test( "testsmtpcli" );
 
-	const char * host = NULL, * port = NULL;
+	const char * host = "127.0.0.1", * port = NULL;
 
 	extern char *optarg ;
 	int c ;
@@ -51,13 +53,24 @@ int main( int argc, char * argv[] )
 	SP_NKSocket::setLogSocketDefault( 1 );
 	SP_NKLog::setLogLevel( LOG_DEBUG );
 
-	SP_NKTcpSocket socket( host, atoi( port ) );
+	SP_NKTcpSocket * socket = NULL;
 
-	SP_NKMilterProtocol protocol( &socket );
+	if( isdigit( port[0] ) ) {
+		socket = new SP_NKTcpSocket( host, atoi( port ) );
+	} else {
+		socket = new SP_NKTcpSocket( port );
+	}
+
+	socket->setSocketTimeout( 5 );
+
+	SP_NKNameValueList macroList;
+	macroList.add( "{if_addr}", "192.168.145.128" );
+
+	SP_NKMilterProtocol protocol( socket, &macroList );
 
 	protocol.negotiate();
 
-	protocol.connect( "localhost", "127.0.0.1", 3456 );
+	protocol.connect( "foo.bar", "219.239.32.3", 3456 );
 
 	protocol.helo( "foo.bar" );
 
@@ -72,9 +85,15 @@ int main( int argc, char * argv[] )
 	protocol.body( "hello world", 12 );
 	protocol.endOfBody();
 
+	if( 'h' == protocol.getLastReply()->mCmd ) {
+		printf( "%s: %s\n", protocol.getReplyHeaderName(), protocol.getReplyHeaderValue() );
+	}
+
 	protocol.abort();
 
 	protocol.quit();
+
+	delete socket;
 
 	return 0;
 }
