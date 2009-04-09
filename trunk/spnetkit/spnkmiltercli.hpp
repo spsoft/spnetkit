@@ -54,7 +54,15 @@ public:
 		char * mData;
 	} Reply_t;
 
+	int readReply();
+
 	Reply_t * getLastReply();
+
+	int isAccept();
+
+	int isReject();
+
+	int isModAction();
 
 	const char * getReplyHeaderName();
 
@@ -65,8 +73,6 @@ public:
 	uint32_t getProtoFlags();
 
 private:
-
-	int readReply();
 
 	int sendCmd( char cmd, const char * data, int len );
 

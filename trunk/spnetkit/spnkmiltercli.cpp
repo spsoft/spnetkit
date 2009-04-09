@@ -265,7 +265,7 @@ int SP_NKMilterProtocol :: header( const char * name, const char * value )
 	len += strlen( value ) + 1;
 
 	int sockRet = sendCmd( 'L', req, len );
-	if( sockRet > 0 ) readReply();
+	if( sockRet > 0 ) sockRet = readReply();
 
 	free( req );
 
@@ -280,7 +280,7 @@ int SP_NKMilterProtocol :: endOfHeader()
 	}
 
 	int sockRet = sendCmd( 'N', NULL, 0 );
-	if( sockRet > 0 ) readReply();
+	if( sockRet > 0 ) sockRet = readReply();
 
 	return sockRet > 0 ? 0 : -1;
 }
@@ -293,7 +293,7 @@ int SP_NKMilterProtocol :: body( const char * data, int len )
 	}
 
 	int sockRet = sendCmd( 'B', data, len );
-	if( sockRet > 0 ) readReply();
+	if( sockRet > 0 ) sockRet = readReply();
 
 	return sockRet > 0 ? 0 : -1;
 }
@@ -306,7 +306,7 @@ int SP_NKMilterProtocol :: endOfBody()
 	}
 
 	int sockRet = sendCmd( 'E', NULL, 0 );
-	if( sockRet > 0 ) readReply();
+	if( sockRet > 0 ) sockRet = readReply();
 
 	return sockRet > 0 ? 0 : -1;
 }
@@ -385,6 +385,27 @@ int SP_NKMilterProtocol :: readReply()
 SP_NKMilterProtocol::Reply_t * SP_NKMilterProtocol :: getLastReply()
 {
 	return &mLastReply;
+}
+
+int SP_NKMilterProtocol :: isAccept()
+{
+	const char * list = "ac";
+
+	return ( 0 == mLastReply.mCmd ) || ( NULL != strchr( list, mLastReply.mCmd ) );
+}
+
+int SP_NKMilterProtocol :: isReject()
+{
+	const char * list = "drt";
+
+	return NULL != strchr( list, mLastReply.mCmd );
+}
+
+int SP_NKMilterProtocol :: isModAction()
+{
+	const char * list = "+-bhmpqO";
+
+	return NULL != strchr( list, mLastReply.mCmd );
 }
 
 const char * SP_NKMilterProtocol :: getReplyHeaderName()
