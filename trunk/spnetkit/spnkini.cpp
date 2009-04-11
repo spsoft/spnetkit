@@ -152,6 +152,30 @@ int SP_NKIniFile :: getKeyNameList( const char * section, SP_NKStringList * list
 const char * SP_NKIniFile :: getValue( const char * section, const char * key,
 		char * value, size_t size ) const
 {
+	const char * ret = getRawValue( section, key, value, size );
+
+	char * pos = NULL;
+
+	// remove tailing comment
+	for( pos = value; '\0' != *pos; pos++ ) {
+		if( ';' == *pos || '#' == *pos ) {
+			*pos = '\0';
+			break;
+		}
+	}
+
+	// remove tailing space
+	for( ; pos > value && isspace( *( pos - 1 ) ); ) pos--;
+	*pos = '\0';
+
+	return ret;
+}
+
+const char * SP_NKIniFile :: getRawValue( const char * section, const char * key,
+		char * value, size_t size ) const
+{
+	*value = '\0';
+
 	int index = getSectionIndex( section );
 
 	if( index < 0 ) return NULL;
@@ -177,13 +201,7 @@ const char * SP_NKIniFile :: getValue( const char * section, const char * key,
 
 					SP_NKStr::strlcpy( value, pos, size );
 
-					// remove tailing comment
-					for( pos = value; '\0' != *pos; pos++ ) {
-						if( ';' == *pos || '#' == *pos ) {
-							*pos = '\0';
-							break;
-						}
-					}
+					pos = strchr( value, '\0' );
 
 					// remove tailing space
 					for( ; pos > value && isspace( *( pos - 1 ) ); ) pos--;

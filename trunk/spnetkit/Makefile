@@ -18,6 +18,7 @@ LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
 		spnkicapcli.o spnkmiltercli.o
 
 TARGET =  libspnetkit.so libspnetkit.a \
+		teststr \
 		testini \
 		testpop3cli \
 		testsmtpcli \
@@ -61,6 +62,9 @@ libspnetkit_s.a: spnksslsocket.o
 	$(INSTLIB)
 
 testini: testini.o
+	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+
+teststr: teststr.o
 	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
 
 testpop3cli: testpop3cli.o
