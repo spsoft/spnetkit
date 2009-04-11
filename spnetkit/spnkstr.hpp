@@ -14,8 +14,13 @@ public:
 
 	static size_t strlcpy( char *dst, const char *src, size_t dst_sz );
 
+	/**
+	 * @param delimiter : 0 -- ' ', \t, \r, \n, \f, \v
+	 *
+	 * @return 0 : OK, -1 : out of index, -2 : dest is too small
+	 */
 	static int getToken( const char * src, int index, char * dest, int len,
-		char delimiter = ' ', const char ** next = 0 );
+		char delimiter = 0, const char ** next = 0 );
 
 private:
 	SP_NKStr();

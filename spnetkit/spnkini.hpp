@@ -46,6 +46,9 @@ public:
 	const char * getValue( const char * section, const char * key,
 			char * value, size_t size ) const;
 
+	const char * getRawValue( const char * section, const char * key,
+			char * value, size_t size ) const;
+
 	int getValueAsInt( const char * section, const char * key ) const;
 
 private:
