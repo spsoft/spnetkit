@@ -12,6 +12,7 @@
 
 class SP_NKSocket;
 class SP_NKNameValueList;
+class SP_NKVector;
 
 /**
  * More detail about milter protocol, please refer
@@ -20,6 +21,9 @@ class SP_NKNameValueList;
 
 class SP_NKMilterProtocol
 {
+public:
+	enum { eChunkSize = 65535 };
+
 public:
 	SP_NKMilterProtocol( SP_NKSocket * socket, SP_NKNameValueList * macroList = 0 );
 	~SP_NKMilterProtocol();
@@ -32,7 +36,7 @@ public:
 
 	int helo( const char * args );
 
-	int mail( const char * id, const char * sender );
+	int mail( const char * sender );
 
 	int rcpt( const char * rcpt );
 
@@ -50,7 +54,7 @@ public:
 
 	typedef struct tagReply {
 		uint32_t mLen;
-		char mCmd;
+		char mRespCode;
 		char * mData;
 	} Reply_t;
 
@@ -58,11 +62,28 @@ public:
 
 	Reply_t * getLastReply();
 
-	int isAccept();
+	enum {
+		eAddRcpt = '+',
+		eDelRcpt = '-',
+		eAccept = 'a',
+		eReplBody = 'b',
+		eContinue = 'c',
+		eDiscard = 'd',
+		eAddHeader = 'h',
+		eChgHeader = 'm',
+		eProgress = 'p',
+		eQuarantine = 'q',
+		eReject = 'r',
+		eTempfail = 't',
+		eReplyCode = 'y',
+		eOptNeg = 'O'
+	};
 
-	int isReject();
+	int isLastRespCode( int code );
 
-	int isModAction();
+	int getLastRespCode();
+
+	int getReplyHeaderIndex();
 
 	const char * getReplyHeaderName();
 
@@ -93,6 +114,64 @@ private:
 	unsigned long mFilterVersion;
 	unsigned long mFilterFlags;
 	unsigned long mProtoFlags;
+};
+
+class SP_NKMilterConfig {
+public:
+	SP_NKMilterConfig();
+	~SP_NKMilterConfig();
+
+	int init( const char * name, const char * value );
+
+	const char * getName();
+
+	const char * getHost();
+	const char * getPort();
+
+	int isFlagReject();
+	int isFlagTempfail();
+
+	int getConnectTimeout();
+	int getSendTimeout();
+	int getRecvTimeout();
+	int getEndTimeout();
+
+	void dump();
+
+private:
+	int parseSocket( const char * value );
+	int parseTimeout( const char * value );
+
+	static int parseTimeValue( const char * value );
+
+private:
+	char mName[ 32 ];
+	char mHost[ 32 ];
+	char mPort[ 128 ];
+	char mFlag;
+	int mConnectTimeout;
+	int mSendTimeout;
+	int mRecvTimeout;
+	int mEndTimeout;
+};
+
+class SP_NKMilterListConfig {
+public:
+	SP_NKMilterListConfig();
+	~SP_NKMilterListConfig();
+
+	int getCount();
+
+	void append( SP_NKMilterConfig * config );
+
+	SP_NKMilterConfig * getItem( int index );
+
+	SP_NKMilterConfig * find( const char * name );
+
+	void dump();
+
+private:
+	SP_NKVector * mList;
 };
 
 #endif

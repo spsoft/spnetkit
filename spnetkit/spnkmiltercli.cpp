@@ -12,6 +12,7 @@
 #include "spnksocket.hpp"
 #include "spnklog.hpp"
 #include "spnklist.hpp"
+#include "spnkstr.hpp"
 
 #include "spnkmiltercli.hpp"
 
@@ -175,7 +176,7 @@ int SP_NKMilterProtocol :: helo( const char * args )
 	return sockRet > 0 ? 0 : -1;
 }
 
-int SP_NKMilterProtocol :: mail( const char * id, const char * sender )
+int SP_NKMilterProtocol :: mail( const char * sender )
 {
 	if( mProtoFlags & SMFIP_NOMAIL ) {
 		resetReply();
@@ -193,7 +194,7 @@ int SP_NKMilterProtocol :: mail( const char * id, const char * sender )
 	//			${auth_author} ${mail_mailer} ${mail_host}
 	//			${mail_addr}
 	Macro_t macroArray[] = {
-		{ "i", id }, { "{auth_type", "" }, { "{auth_authen}", "" },
+		{ "i", "" }, { "{auth_type", "" }, { "{auth_authen}", "" },
 		{ "{auth_ssf}", "" }, { "{auth_authro}", "" },
 		{ "{mail_mailer}", "local" }, { "{mail_host}", "" },
 		{ "{mail_addr}", sender },
@@ -354,6 +355,7 @@ void SP_NKMilterProtocol :: resetReply()
 	if( NULL != mLastReply.mData ) free( mLastReply.mData );
 
 	memset( &mLastReply, 0, sizeof( Reply_t ) );
+	mLastReply.mRespCode = eContinue;
 }
 
 int SP_NKMilterProtocol :: readReply()
@@ -367,7 +369,7 @@ int SP_NKMilterProtocol :: readReply()
 	sockRet = mSocket->readn( prefix, 5 );
 	if( sockRet > 0 ) {
 		mLastReply.mLen = ntohl( *(uint32_t*)prefix ) - 1;
-		mLastReply.mCmd = prefix[4];
+		mLastReply.mRespCode = prefix[4];
 	}
 
 	if( sockRet > 0 && mLastReply.mLen > 0 ) {
@@ -377,7 +379,7 @@ int SP_NKMilterProtocol :: readReply()
 		mLastReply.mData[ mLastReply.mLen ] = '\0';
 	}
 
-	SP_NKLog::log( LOG_DEBUG, "RETN: readReply %d, %c", mLastReply.mLen, mLastReply.mCmd );
+	SP_NKLog::log( LOG_DEBUG, "RETN: readReply %d, %c", mLastReply.mLen, mLastReply.mRespCode );
 
 	return sockRet;
 }
@@ -387,37 +389,46 @@ SP_NKMilterProtocol::Reply_t * SP_NKMilterProtocol :: getLastReply()
 	return &mLastReply;
 }
 
-int SP_NKMilterProtocol :: isAccept()
+int SP_NKMilterProtocol :: isLastRespCode( int code )
 {
-	const char * list = "ac";
-
-	return ( 0 == mLastReply.mCmd ) || ( NULL != strchr( list, mLastReply.mCmd ) );
+	return code == mLastReply.mRespCode;
 }
 
-int SP_NKMilterProtocol :: isReject()
+int SP_NKMilterProtocol :: getLastRespCode()
 {
-	const char * list = "drt";
-
-	return NULL != strchr( list, mLastReply.mCmd );
+	return mLastReply.mRespCode;
 }
 
-int SP_NKMilterProtocol :: isModAction()
+int SP_NKMilterProtocol :: getReplyHeaderIndex()
 {
-	const char * list = "+-bhmpqO";
+	int ret = -1;
 
-	return NULL != strchr( list, mLastReply.mCmd );
+	if( eChgHeader == mLastReply.mRespCode ) {
+		memcpy( &ret, mLastReply.mData, sizeof( uint32_t ) );
+		ret = ntohl( ret );
+	}
+
+	return ret;
 }
 
 const char * SP_NKMilterProtocol :: getReplyHeaderName()
 {
-	return mLastReply.mData;
+	const char * ret = mLastReply.mData;
+
+	if( eChgHeader == mLastReply.mRespCode ) {
+		ret += sizeof( uint32_t );
+	}
+
+	return ret;
 }
 
 const char * SP_NKMilterProtocol :: getReplyHeaderValue()
 {
-	char * ret = strchr( mLastReply.mData, '\0' );
+	const char * ret = getReplyHeaderName();
 
-	return ret + 1;
+	ret = strchr( ret, '\0' );
+
+	return NULL == ret ? NULL : ret + 1;
 }
 
 uint32_t SP_NKMilterProtocol :: getFilterVersion()
@@ -433,5 +444,245 @@ uint32_t SP_NKMilterProtocol :: getFilterFlags()
 uint32_t SP_NKMilterProtocol :: getProtoFlags()
 {
 	return mProtoFlags;
+}
+
+//===================================================================
+
+SP_NKMilterConfig :: SP_NKMilterConfig()
+{
+	memset( mName, 0, sizeof( mName ) );
+	memset( mHost, 0, sizeof( mHost ) );
+	memset( mPort, 0, sizeof( mPort ) );
+
+	mFlag = 0;
+
+	mConnectTimeout = 5 * 60;
+	mSendTimeout = 10;
+	mRecvTimeout = 10;
+	mEndTimeout = 5 * 60;
+}
+
+SP_NKMilterConfig :: ~SP_NKMilterConfig()
+{
+}
+
+int SP_NKMilterConfig :: parseSocket( const char * value )
+{
+	// local:/var/run/f1.sock
+	// inet:999@localhost
+
+	int ret = 0;
+
+	const char * next = NULL;
+	char type[ 16 ] = { 0 };
+	SP_NKStr::getToken( value, 0, type, sizeof( type ), ':', &next );
+
+	if( 0 == strcasecmp( type, "local" ) || 0 == strcasecmp( type, "unix" ) ) {
+		strncpy( mPort, next, sizeof( mPort ) - 1 );
+	} else if( 0 == strcasecmp( type, "inet" ) ) {
+		SP_NKStr::getToken( next, 0, mPort, sizeof( mPort ), '@', &next );
+		if( 0 == strcasecmp( next, "localhost" ) ) next = "127.0.0.1";
+		strncpy( mHost, next, sizeof( mHost ) - 1 );
+	} else {
+		ret = -1;
+	}
+
+	return ret;
+}
+
+int SP_NKMilterConfig :: parseTimeValue( const char * value )
+{
+	char * pos = NULL;
+
+	int ret = strtol( value, &pos, 10 );
+
+	switch( tolower( *pos ) ) {
+		case 's':
+			break;
+
+		case 'm':
+			ret = ret * 60;
+			break;
+
+		case 'h':
+			ret = ret * 3600;
+			break;
+	}
+
+	return ret;
+}
+
+int SP_NKMilterConfig :: parseTimeout( const char * value )
+{
+	// S:1s;R:1s;E:5m
+
+	int ret = 0;
+
+	for( int i = 0; i < 4; i++ ) {
+		char tmp[ 16 ] = { 0 };
+
+		if( SP_NKStr::getToken( value, i, tmp, sizeof( tmp ), ';' ) < 0 ) break;
+
+		char tval[ 16 ] = { 0 };
+
+		SP_NKStr::getToken( tmp, 1, tval, sizeof( tval ), ':' );
+
+		switch( tolower( tmp[0] ) ) {
+			case 'c':
+				mConnectTimeout = parseTimeValue( tval );
+				break;
+			case 's':
+				mSendTimeout = parseTimeValue( tval );
+				break;
+			case 'r':
+				mRecvTimeout = parseTimeValue( tval );
+				break;
+			case 'e':
+				mEndTimeout = parseTimeValue( tval );
+				break;
+		}
+	}
+
+	return ret;
+}
+
+int SP_NKMilterConfig :: init( const char * name, const char * value )
+{
+	int ret = 0;
+
+	strncpy( mName, name, sizeof( mName ) - 1 );
+
+	if( '"' == *value ) value++;
+
+	for( int i = 0; i < 3; i++ ) {
+		char tmp[ 256 ] = { 0 };
+
+		if( SP_NKStr::getToken( value, i, tmp, sizeof( tmp ), ',' ) < 0 ) break;
+
+		if( 0 == strncasecmp( tmp, "S=", 2 ) ) {
+			ret |= parseSocket( tmp + 2 );
+		}
+
+		if( 0 == strncasecmp( tmp, "T=", 2 ) ) {
+			ret |= parseTimeout( tmp + 2 );
+		}
+
+		if( 0 == strncasecmp( tmp, "F=", 2 ) ) {
+			char fval[ 8 ] = { 0 };
+			SP_NKStr::getToken( tmp, 1, fval, sizeof( fval ), '=' );
+			mFlag = fval[0];
+		}
+	}
+
+	if( '\0' == mPort[0] ) ret = -1;
+
+	return ret;
+}
+
+const char * SP_NKMilterConfig :: getName()
+{
+	return mName;
+}
+
+const char * SP_NKMilterConfig :: getHost()
+{
+	return mHost;
+}
+
+const char * SP_NKMilterConfig :: getPort()
+{
+	return mPort;
+}
+
+int SP_NKMilterConfig :: isFlagReject()
+{
+	return 'R' == mFlag;
+}
+
+int SP_NKMilterConfig :: isFlagTempfail()
+{
+	return 'T' == mFlag;
+}
+
+int SP_NKMilterConfig :: getConnectTimeout()
+{
+	return mConnectTimeout;
+}
+
+int SP_NKMilterConfig :: getSendTimeout()
+{
+	return mSendTimeout;
+}
+
+int SP_NKMilterConfig :: getRecvTimeout()
+{
+	return mRecvTimeout;
+}
+
+int SP_NKMilterConfig :: getEndTimeout()
+{
+	return mEndTimeout;
+}
+
+void SP_NKMilterConfig :: dump()
+{
+	SP_NKLog::log( LOG_DEBUG, "INIT: %s host [%s] port [%s] flag %c, timeout c %d, s %d, r %d, e %d",
+		mName, mHost, mPort, mFlag, mConnectTimeout, mSendTimeout, mRecvTimeout, mEndTimeout );
+}
+
+//===================================================================
+
+SP_NKMilterListConfig :: SP_NKMilterListConfig()
+{
+	mList = new SP_NKVector();
+}
+
+SP_NKMilterListConfig :: ~SP_NKMilterListConfig()
+{
+	for( int i = 0; i < mList->getCount(); i++ ) {
+		SP_NKMilterConfig * iter = (SP_NKMilterConfig*)mList->getItem(i);
+		delete iter;
+	}
+
+	delete mList, mList = NULL;
+}
+
+int SP_NKMilterListConfig :: getCount()
+{
+	return mList->getCount();
+}
+
+void SP_NKMilterListConfig :: append( SP_NKMilterConfig * config )
+{
+	mList->append( config );
+}
+
+SP_NKMilterConfig * SP_NKMilterListConfig :: getItem( int index )
+{
+	return (SP_NKMilterConfig*)mList->getItem( index );
+}
+
+SP_NKMilterConfig * SP_NKMilterListConfig :: find( const char * name )
+{
+	SP_NKMilterConfig * ret = NULL;
+
+	for( int i = 0; i < mList->getCount(); i++ ) {
+		SP_NKMilterConfig * iter = (SP_NKMilterConfig*)mList->getItem(i);
+
+		if( 0 == strcasecmp( name, iter->getName() ) ) {
+			ret = iter;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+void SP_NKMilterListConfig :: dump()
+{
+	for( int i = 0; i < mList->getCount(); i++ ) {
+		SP_NKMilterConfig * iter = (SP_NKMilterConfig*)mList->getItem(i);
+		iter->dump();
+	}
 }
 

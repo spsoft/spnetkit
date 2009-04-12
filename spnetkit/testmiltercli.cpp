@@ -65,6 +65,7 @@ int main( int argc, char * argv[] )
 
 	SP_NKNameValueList macroList;
 	macroList.add( "{if_addr}", "192.168.145.128" );
+	macroList.add( "i", "id123" );
 
 	SP_NKMilterProtocol protocol( socket, &macroList );
 
@@ -74,7 +75,7 @@ int main( int argc, char * argv[] )
 
 	protocol.helo( "foo.bar" );
 
-	protocol.mail( "id123", "sender@foo.bar" );
+	protocol.mail( "sender@foo.bar" );
 
 	protocol.rcpt( "rcpt@foo.bar" );
 
@@ -85,7 +86,7 @@ int main( int argc, char * argv[] )
 	protocol.body( "hello world", 12 );
 	protocol.endOfBody();
 
-	if( 'h' == protocol.getLastReply()->mCmd ) {
+	if( protocol.isLastRespCode( SP_NKMilterProtocol::eAddHeader ) ) {
 		printf( "%s: %s\n", protocol.getReplyHeaderName(), protocol.getReplyHeaderValue() );
 	}
 
