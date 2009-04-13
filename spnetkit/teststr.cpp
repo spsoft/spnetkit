@@ -30,6 +30,12 @@ int main( int argc, char * argv[] )
 
 	test( ",\t, ,a  , b\t,\tc \t", ',' );
 
+	char id[ 10 ] = { 0 };
+	for( int i = 0; i < 10; i++ ) {
+		SP_NKStr::genID( id, sizeof( id ) );
+		printf( "%s\n", id );
+	}
+
 	return 0;
 }
 

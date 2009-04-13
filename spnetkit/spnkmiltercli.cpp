@@ -122,16 +122,13 @@ int SP_NKMilterProtocol :: connect( const char * hostname, const char * addr, sh
 		return 0;
 	}
 
-	char ourhost[ 256 ] = { 0 };
-	gethostname( ourhost, sizeof( ourhost ) );
-
 	char remoteid[ 512 ] = { 0 };
 	snprintf( remoteid, sizeof( remoteid ), "%.128s [%.64s]", hostname, addr );
 
 	//'C'	SMFIC_CONNECT	$_ $j ${daemon_name} ${if_name} ${if_addr}
 	Macro_t macroArray[] = {
-		{ "_", remoteid }, { "j", ourhost }, { "{daemon_name}", "spngsmtp" },
-		{ "{if_name}", ourhost }, { "{if_addr}", "" },
+		{ "_", remoteid }, { "j", "" }, { "{daemon_name}", "" },
+		{ "{if_name}", "" }, { "{if_addr}", "" },
 		{ NULL, NULL }
 	};
 
