@@ -80,7 +80,7 @@ void spnk_setlogmask( int mask )
 
 SP_NKLog::LogFunc_t SP_NKLog::mFunc = spnk_syslog;
 int SP_NKLog::mLevel = LOG_NOTICE;
-int SP_NKLog::mIsLogTimeStamp = 1;
+int SP_NKLog::mIsLogTimeStamp = 0;
 int SP_NKLog::mIsLogPriName = 0;
 
 #ifndef  LOG_PRI
@@ -94,8 +94,8 @@ void SP_NKLog :: setLogFunc( LogFunc_t func )
 
 void SP_NKLog :: setLogLevel( int level )
 {
-	mLevel = LOG_UPTO( level );
-	setlogmask( mLevel );
+	mLevel = level;
+	setlogmask( LOG_UPTO( mLevel ) );
 }
 
 void SP_NKLog :: setLogTimeStamp( int logTimeStamp )

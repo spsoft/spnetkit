@@ -56,9 +56,9 @@ void SP_NKIniFile :: BatchDump( SP_NKIniItemInfo_t * infoArray )
 		if( NULL == iter->mSection ) break;
 
 		if( eSP_NKIniItemInt == iter->mType ) {
-			SP_NKLog::log( LOG_DEBUG, "[%s]%s = %d", iter->mSection, iter->mKey, *(int*)iter->mValue );
+			SP_NKLog::log( LOG_NOTICE, "[%s]%s = %d", iter->mSection, iter->mKey, *(int*)iter->mValue );
 		} else {
-			SP_NKLog::log( LOG_DEBUG, "[%s]%s = %s", iter->mSection, iter->mKey, iter->mValue );
+			SP_NKLog::log( LOG_NOTICE, "[%s]%s = %s", iter->mSection, iter->mKey, iter->mValue );
 		}
 	}
 }
