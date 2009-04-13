@@ -236,6 +236,13 @@ const char * SP_NKNameValueList :: getValue( int index )
 	return mValueList->getItem( index );
 }
 
+const char * SP_NKNameValueList :: getValue( const char * name )
+{
+	int index = seek( name );
+
+	return index >= 0 ? getValue( index ) : NULL;
+}
+
 void SP_NKNameValueList :: add( const char * name, const char * value )
 {
 	mNameList->append( name );

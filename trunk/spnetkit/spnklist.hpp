@@ -61,6 +61,7 @@ public:
 
 	const char * getName( int index );
 	const char * getValue( int index );
+	const char * getValue( const char * name );
 
 	void add( const char * name, const char * value );
 	int seek( const char * name );
