@@ -35,6 +35,10 @@ void spnk_openlog (const char *ident , int option , int facility)
 {
 }
 
+void spnk_setlogmask( int mask )
+{
+}
+
 /*
  * Option flags for openlog.
  *
@@ -69,6 +73,7 @@ void spnk_openlog (const char *ident , int option , int facility)
 
 #define spnk_syslog syslog
 #define spnk_openlog openlog
+#define spnk_setlogmask setlogmask
 #define spnk_threadid pthread_self
 
 #endif
@@ -90,6 +95,7 @@ void SP_NKLog :: setLogFunc( LogFunc_t func )
 void SP_NKLog :: setLogLevel( int level )
 {
 	mLevel = LOG_UPTO( level );
+	setlogmask( mLevel );
 }
 
 void SP_NKLog :: setLogTimeStamp( int logTimeStamp )

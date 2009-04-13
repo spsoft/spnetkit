@@ -22,6 +22,8 @@ public:
 	static int getToken( const char * src, int index, char * dest, int len,
 		char delimiter = 0, const char ** next = 0 );
 
+	static int genID( char * id, int size );
+
 private:
 	SP_NKStr();
 };

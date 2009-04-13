@@ -6,8 +6,11 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #include "spnkstr.hpp"
+#include "spnkthread.hpp"
 
 char * SP_NKStr :: strsep( char ** s, const char * del )
 {
@@ -41,6 +44,44 @@ size_t SP_NKStr :: strlcpy( char *dst, const char *src, size_t dst_sz )
 	return n;
     else
 	return n + strlen (src);
+}
+
+int SP_NKStr :: genID( char * id, int size )
+{
+	static const char IdChars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+	static const int IC_LEN = sizeof( IdChars ) - 1;
+
+	size--;
+
+	int pos = 0;
+
+	int value = random();
+
+	for( ; value > 0 && pos < size; pos++ ) {
+		id[ pos ] = IdChars[ value % IC_LEN ];
+		value = value / IC_LEN;
+	}
+
+	if( pos < size ) {
+		value = time( NULL );
+		for( ; value > 0 && pos < size; pos++ ) {
+			id[ pos ] = IdChars[ value % IC_LEN ];
+			value = value / IC_LEN;
+		}
+	}
+
+	if( pos < size ) {
+		value = spnk_thread_self();
+		for( ; value > 0 && pos < size; pos++ ) {
+			id[ pos ] = IdChars[ value % IC_LEN ];
+			value = value / IC_LEN;
+		}
+	}
+
+	id[ pos ] = '\0';
+
+	return 0;
 }
 
 int SP_NKStr :: getToken( const char * src, int index, char * dest, int len,
