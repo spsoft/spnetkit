@@ -47,19 +47,15 @@ ssl: $(TARGET_S)
 
 libspnetkit.so: $(LIBOBJS)
 	$(LINKER) $(SOFLAGS) $^ -o $@
-	$(INSTLIB)
 
 libspnetkit.a: $(LIBOBJS)
 	$(AR) $@ $^
-	$(INSTLIB)
 
 libspnetkit_s.so: spnksslsocket.o
 	$(LINKER) $(SOFLAGS) $^ -o $@
-	$(INSTLIB)
 
 libspnetkit_s.a: spnksslsocket.o
 	$(AR) $@ $^
-	$(INSTLIB)
 
 testini: testini.o
 	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
