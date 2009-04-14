@@ -58,43 +58,43 @@ libspnetkit_s.a: spnksslsocket.o
 	$(AR) $@ $^
 
 testini: testini.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 teststr: teststr.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testpop3cli: testpop3cli.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testsmtpcli: testsmtpcli.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testpop3cli_s: testpop3cli_s.o
-	$(LINKER) $(LDFLAGS) -o $@ $^ -L../lib -lspnetkit -lspnetkit_s $(OPENSSL_LIB)
+	$(LINKER) $(LDFLAGS) -o $@ $^ -L. -lspnetkit -lspnetkit_s $(OPENSSL_LIB)
 
 testsmtpcli_s: testsmtpcli_s.o
-	$(LINKER) $(LDFLAGS) -o $@ $^ -L../lib -lspnetkit -lspnetkit_s $(OPENSSL_LIB)
+	$(LINKER) $(LDFLAGS) -o $@ $^ -L. -lspnetkit -lspnetkit_s $(OPENSSL_LIB)
 
 testhttpcli: testhttpcli.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testmemproto: testmemproto.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testmemcli: testmemcli.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testendpoint: testendpoint.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testsocketpool: testsocketpool.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testicapcli: testicapcli.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testmiltercli: testmiltercli.o
-	$(LINKER) $(LDFLAGS) $^ -L../lib -lspnetkit -o $@
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 dist: clean spnetkit-$(version).src.tar.gz
 
