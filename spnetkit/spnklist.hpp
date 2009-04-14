@@ -66,6 +66,7 @@ public:
 	void add( const char * name, const char * value );
 	int seek( const char * name );
 	int remove( int index );
+	int remove( const char * name );
 
 	void clean();
 

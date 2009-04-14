@@ -261,6 +261,13 @@ int SP_NKNameValueList :: remove( int index )
 	return mNameList->remove( index );
 }
 
+int SP_NKNameValueList :: remove( const char * name )
+{
+	int index = seek( name );
+
+	return index >= 0 ? remove( index ) : -1;
+}
+
 void SP_NKNameValueList :: clean()
 {
 	mNameList->clean();

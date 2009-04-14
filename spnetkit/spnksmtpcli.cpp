@@ -572,3 +572,8 @@ int SP_NKSmtpProtocol :: quit()
 	return doCommand( "QUIT\r\n", "QUIT" );
 }
 
+int SP_NKSmtpProtocol :: rset()
+{
+	return doCommand( "RSET\r\n", "RSET" );
+}
+
