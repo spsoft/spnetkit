@@ -91,6 +91,7 @@ public:
 	int data();
 	int mailData( const char * data, const size_t dataSize );
 	int quit();
+	int rset();
 
 private:
 	static int readReply( SP_NKSocket * socket, char * reply, int replySize,
