@@ -23,6 +23,7 @@ typedef pthread_attr_t  spnk_thread_attr_t;
 #define spnk_thread_cond_init      pthread_cond_init
 #define spnk_thread_cond_destroy   pthread_cond_destroy
 #define spnk_thread_cond_wait      pthread_cond_wait
+#define spnk_thread_cond_timedwait pthread_cond_timedwait
 #define spnk_thread_cond_signal    pthread_cond_signal
 
 #define spnk_thread_attr_init           pthread_attr_init

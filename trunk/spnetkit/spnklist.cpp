@@ -274,3 +274,90 @@ void SP_NKNameValueList :: clean()
 	mValueList->clean();
 }
 
+//=============================================================================
+
+SP_NKSortedArray :: SP_NKSortedArray( CmpFunc_t cmpFunc, int initCount )
+{
+	mImpl = new SP_NKVector( initCount );
+	mCmpFunc = cmpFunc;
+}
+
+SP_NKSortedArray :: ~SP_NKSortedArray()
+{
+	delete mImpl, mImpl = NULL;
+}
+
+int SP_NKSortedArray :: getCount() const
+{
+	return mImpl->getCount();
+}
+
+int SP_NKSortedArray :: binarySearch( const void * item, int * insertPoint,
+		int firstIndex, int size ) const
+{
+	if( size == -1 )  size = mImpl->mCount;
+
+	if( size == 0 ) {
+		if( insertPoint != NULL ) * insertPoint = firstIndex; 
+		return -1;
+	}
+
+	int cmpRet = mCmpFunc( item, mImpl->mFirst[ firstIndex + ( size - 1 ) / 2 ] );
+	if( cmpRet < 0 ) {
+		return binarySearch( item, insertPoint, firstIndex, ( size - 1 ) / 2 );
+	} else if( cmpRet > 0 ) {
+		return binarySearch( item, insertPoint, firstIndex + ( ( size - 1 ) / 2 ) + 1,
+				size - ( ( size - 1 ) / 2 ) - 1 );
+	} else {
+		return( firstIndex + ( size - 1 ) / 2 );
+	}
+}
+
+int SP_NKSortedArray :: insert( void * item, void ** match )
+{
+	int insertPoint = -1;
+
+	int index = binarySearch( item, &insertPoint );
+	if( index >= 0 ) {
+		*match = mImpl->mFirst[ index ];
+		mImpl->mFirst[ index ] = item;
+	} else {
+		if( mImpl->mCount >= mImpl->mMaxCount ) {
+			mImpl->mMaxCount = ( mImpl->mMaxCount * 3 ) / 2 + 1;
+			mImpl->mFirst = (void**)realloc( mImpl->mFirst,
+					sizeof( void * ) * mImpl->mMaxCount );
+			memset( mImpl->mFirst + mImpl->mCount, 0,
+					( mImpl->mMaxCount - mImpl->mCount ) * sizeof( void * ) );
+		}
+		if( insertPoint < mImpl->mCount ) {
+			memmove( mImpl->mFirst + insertPoint + 1, mImpl->mFirst + insertPoint,
+					( mImpl->mCount - insertPoint ) * sizeof( void * ) );
+		}
+
+		mImpl->mFirst[ insertPoint ] = item;
+		mImpl->mCount++;
+	}
+
+	return index >= 0 ? 1 : 0;
+}
+
+int SP_NKSortedArray :: find( const void * key )
+{
+	return binarySearch( key );
+}
+
+const void * SP_NKSortedArray :: getItem( int index ) const
+{
+	return mImpl->getItem( index );
+}
+
+void * SP_NKSortedArray :: takeItem( int index )
+{
+	return mImpl->takeItem( index );
+}
+
+void SP_NKSortedArray :: clean()
+{
+	return mImpl->clean();
+}
+

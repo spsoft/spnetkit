@@ -15,7 +15,8 @@ LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
 		spnksmtpaddr.o spnksmtpcli.o \
 		spnkhttpmsg.o spnkhttpcli.o \
 		spnkmemobj.o spnkmemcli.o \
-		spnkicapcli.o spnkmiltercli.o
+		spnkicapcli.o spnkmiltercli.o \
+		spnklock.o
 
 TARGET =  libspnetkit.so libspnetkit.a \
 		teststr \
@@ -28,7 +29,8 @@ TARGET =  libspnetkit.so libspnetkit.a \
 		testendpoint \
 		testsocketpool \
 		testicapcli \
-		testmiltercli
+		testmiltercli \
+		testlock
 
 TARGET_S = libspnetkit_s.so libspnetkit_s.a \
 		testpop3cli_s \
@@ -94,6 +96,9 @@ testicapcli: testicapcli.o
 	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 testmiltercli: testmiltercli.o
+	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
+
+testlock: testlock.o
 	$(LINKER) $(LDFLAGS) $^ -L. -lspnetkit -o $@
 
 dist: clean spnetkit-$(version).src.tar.gz
