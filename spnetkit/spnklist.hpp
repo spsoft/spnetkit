@@ -28,6 +28,8 @@ private:
 	int mMaxCount;
 	int mCount;
 	void ** mFirst;
+
+	friend class SP_NKSortedArray;
 };
 
 class SP_NKStringList {
@@ -73,6 +75,38 @@ public:
 private:
 	SP_NKStringList * mNameList;
 	SP_NKStringList * mValueList;
+};
+
+class SP_NKSortedArray {
+public:
+	typedef int ( * CmpFunc_t )( const void *, const void * );
+
+public:
+	SP_NKSortedArray( CmpFunc_t cmpFunc, int initCount = 2 );
+	~SP_NKSortedArray();
+
+	int getCount() const;
+
+	/* @return 0 : insert ok, 1 : update ok, match bring back the old value */
+	int insert( void * item, void ** match );
+
+	/* @return >= 0 : the index of the key, -1 : not found */
+	int find( const void * key );
+
+	const void * getItem( int index ) const;
+	void * takeItem( int index );
+	void clean();
+
+private:
+	SP_NKSortedArray( SP_NKSortedArray & );
+	SP_NKSortedArray & operator=( SP_NKSortedArray & );
+
+	// @return >= 0 : found, -1 : not found
+	int binarySearch( const void * item, int * insertPoint = 0,
+			int firstIndex = 0, int size = -1 ) const;
+
+	SP_NKVector * mImpl;
+	CmpFunc_t mCmpFunc;
 };
 
 #endif
