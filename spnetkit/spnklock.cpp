@@ -314,7 +314,11 @@ SP_NKTokenLockGuard :: SP_NKTokenLockGuard( SP_NKTokenLockManager * manager )
 
 SP_NKTokenLockGuard :: ~SP_NKTokenLockGuard()
 {
-	if( NULL != mToken ) mManager->unlock( mToken );
+	if( NULL != mToken ) {
+		mManager->unlock( mToken );
+		free( mToken );
+		mToken = NULL;
+	}
 }
 
 int SP_NKTokenLockGuard :: lock( const char * token, int wait4ms )
