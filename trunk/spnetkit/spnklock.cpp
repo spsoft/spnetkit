@@ -304,3 +304,30 @@ int SP_NKTokenLockManager :: unlock( const char * token )
 	return ret;
 }
 
+//===========================================================================
+
+SP_NKTokenLockGuard :: SP_NKTokenLockGuard( SP_NKTokenLockManager * manager )
+{
+	mManager = manager;
+	mToken = NULL;
+}
+
+SP_NKTokenLockGuard :: ~SP_NKTokenLockGuard()
+{
+	if( NULL != mToken ) mManager->unlock( mToken );
+}
+
+int SP_NKTokenLockGuard :: lock( const char * token, int wait4ms )
+{
+	mToken = strdup( token );
+
+	int ret = mManager->lock( mToken, wait4ms );
+
+	if( 0 != ret ) {
+		free( mToken );
+		mToken = NULL;
+	}
+
+	return ret;
+}
+
