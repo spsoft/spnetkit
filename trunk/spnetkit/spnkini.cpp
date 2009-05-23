@@ -109,6 +109,23 @@ void SP_NKIniFile :: getSectionNameList( SP_NKStringList * list ) const
 	}
 }
 
+int SP_NKIniFile :: getSection( const char * section, SP_NKStringList * list ) const
+{
+	int index = getSectionIndex( section );
+
+	if( index < 0 ) return -1;
+
+	for( int i = index + 1; i < mFile->getCount(); i++ ) {
+		const char * line = mFile->getItem(i);
+
+		if( '[' == line[0] ) break;
+
+		list->append( line );
+	}
+
+	return 0;
+}
+
 int SP_NKIniFile :: getSectionIndex( const char * section ) const
 {
 	char tmp[ 256 ] = { 0 };

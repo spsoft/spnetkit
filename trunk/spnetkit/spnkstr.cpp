@@ -46,6 +46,15 @@ size_t SP_NKStr :: strlcpy( char *dst, const char *src, size_t dst_sz )
 	return n + strlen (src);
 }
 
+char * SP_NKStr :: toLower ( char * s )
+{
+	for( char * it = s; '\0' != *it; ++it ) {
+		*it = tolower( *it );
+	}
+
+	return s;
+}
+
 int SP_NKStr :: genID( char * id, int size )
 {
 	static const char IdChars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

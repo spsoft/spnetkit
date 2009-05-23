@@ -39,6 +39,8 @@ public:
 
 	void getSectionNameList( SP_NKStringList * list ) const;
 
+	int getSection( const char * section, SP_NKStringList * list ) const;
+
 	// @return -1 : no such section, 0 : found
 	int getKeyNameList( const char * section, SP_NKStringList * list ) const;
 

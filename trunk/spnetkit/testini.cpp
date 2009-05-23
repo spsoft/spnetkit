@@ -48,6 +48,22 @@ int main( int argc, char * argv[] )
 
 			printf( "\n" );
 		}
+
+		printf( "\ntest getSection\n\n" );
+
+		for( int i = 0; i < sectionList.getCount(); i++ ) {
+			const char * secName = sectionList.getItem(i);
+
+			printf( "[%s]\n", secName );
+
+			SP_NKStringList list;
+			iniFile.getSection( secName, &list );
+
+			char * text = list.getMerge();
+			printf( "%s\n", text );
+
+			free( text );
+		}
 	} else {
 		printf( "Cannot open %s\n", argv[1] );
 	}
