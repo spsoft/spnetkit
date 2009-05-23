@@ -39,5 +39,17 @@ private:
 	int mStop;
 };
 
+class SP_NKTokenLockGuard {
+public:
+	SP_NKTokenLockGuard( SP_NKTokenLockManager * manager );
+	~SP_NKTokenLockGuard();
+
+	int lock( const char * token, int wait4ms );
+
+private:
+	SP_NKTokenLockManager * mManager;
+	char * mToken;
+};
+
 #endif
 
