@@ -24,6 +24,8 @@ public:
 
 	static int genID( char * id, int size );
 
+	static char * toLower ( char * s );
+
 private:
 	SP_NKStr();
 };
