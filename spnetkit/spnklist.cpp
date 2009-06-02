@@ -361,3 +361,64 @@ void SP_NKSortedArray :: clean()
 	return mImpl->clean();
 }
 
+//=============================================================================
+
+SP_NKDoubleLinkNode_t * SP_NKDoubleLinkList :: newNode()
+{
+	return (SP_NKDoubleLinkNode_t*)calloc( sizeof( SP_NKDoubleLinkNode_t ), 1 );
+}
+
+SP_NKDoubleLinkList :: SP_NKDoubleLinkList()
+{
+	mHead = mTail = NULL;
+}
+
+SP_NKDoubleLinkList :: ~SP_NKDoubleLinkList()
+{
+}
+
+SP_NKDoubleLinkNode_t * SP_NKDoubleLinkList :: getHead()
+{
+	return mHead;
+}
+
+SP_NKDoubleLinkNode_t * SP_NKDoubleLinkList :: getTail()
+{
+	return mTail;
+}
+
+void SP_NKDoubleLinkList :: append( SP_NKDoubleLinkNode_t * node )
+{
+	node->mPrev = node->mNext = NULL;
+
+	if( NULL == mTail ) {
+		mHead = mTail = node;
+	} else {
+		mTail->mNext = node;
+		node->mPrev = mTail;
+		mTail = node;
+	}
+}
+
+void SP_NKDoubleLinkList :: remove( SP_NKDoubleLinkNode_t * node )
+{
+	SP_NKDoubleLinkNode_t * prev = node->mPrev, * next = node->mNext;
+
+	if( mHead == node ) assert( NULL == prev );
+	if( mTail == node ) assert( NULL == next );
+
+	if( NULL == prev ) {
+		mHead = next;
+	} else {
+		prev->mNext = next;
+	}
+
+	if( NULL == next ) {
+		mTail = prev;
+	} else {
+		next->mPrev = prev;
+	}
+
+	node->mPrev = node->mNext = NULL;
+}
+
