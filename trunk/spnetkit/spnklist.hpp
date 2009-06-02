@@ -109,5 +109,30 @@ private:
 	CmpFunc_t mCmpFunc;
 };
 
+typedef struct tagSP_NKDoubleLinkNode {
+	struct tagSP_NKDoubleLinkNode * mPrev, * mNext;
+	void * mData;
+} SP_NKDoubleLinkNode_t;
+
+class SP_NKDoubleLinkList {
+public:
+	static SP_NKDoubleLinkNode_t * newNode();
+
+public:
+	SP_NKDoubleLinkList();
+	~SP_NKDoubleLinkList();
+
+	SP_NKDoubleLinkNode_t * getHead();
+
+	SP_NKDoubleLinkNode_t * getTail();
+
+	void append( SP_NKDoubleLinkNode_t * node );
+
+	void remove( SP_NKDoubleLinkNode_t * node );
+
+private:
+	SP_NKDoubleLinkNode_t * mHead, * mTail;
+};
+
 #endif
 
