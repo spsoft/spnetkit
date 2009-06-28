@@ -21,6 +21,7 @@
 #include "spnklog.hpp"
 #include "spnksocket.hpp"
 #include "spnktime.hpp"
+#include "spnkconfig.hpp"
 
 #include "spnkgetopt.h"
 
@@ -31,62 +32,23 @@ SP_NKMemClient * InitMemClient( const char * config )
 
 	SP_NKIniFile ini;
 	if( 0 == ini.open( config ) ) {
-		const char * secName = "SocketPool";
-
-		int connectTimeout = ini.getValueAsInt( secName, "ConnectTimeout" );
-		int socketTimeout = ini.getValueAsInt( secName, "SocketTimeout" );
-		int maxIdlePerEndPoint = ini.getValueAsInt( secName, "MaxIdlePerEndPoint" );
-		int maxIdleTime = ini.getValueAsInt( secName, "MaxIdleTime" );
+		SP_NKSocketPoolConfig poolConfig;
+		poolConfig.init( &ini, "SocketPool" );
 
 		SP_NKTcpSocketFactory * factory = new SP_NKTcpSocketFactory();
-		factory->setTimeout( connectTimeout, socketTimeout );
-		socketPool = new SP_NKSocketPool( maxIdlePerEndPoint, factory );
-		socketPool->setMaxIdleTime( maxIdleTime );
+		factory->setTimeout( poolConfig.getConnectTimeout(), poolConfig.getSocketTimeout() );
+		socketPool = new SP_NKSocketPool( poolConfig.getMaxIdlePerEndPoint(), factory );
+		socketPool->setMaxIdleTime( poolConfig.getMaxIdleTime() );
 
-		secName = "EndPointTable";
-
-		int tableKeyMax = ini.getValueAsInt( secName, "TableKeyMax" );
-		table = new SP_NKEndPointTable( tableKeyMax );
-
-		// read Server[N]
-		SP_NKStringList keyList;
-		ini.getKeyNameList( secName, &keyList );
-
-		for( int i = 0; i < keyList.getCount(); i++ ) {
-			const char * key = keyList.getItem( i );
-
-			if( key == strstr( key, "Server" ) ) {
-				char value[ 256 ] = { 0 };
-				ini.getValue( secName, key, value, sizeof( value ) );
-				if( '\0' != value[0] ) {
-					// "keyMin-keyMax" ip:port
-
-					SP_NKEndPointList * list = new SP_NKEndPointList();
-					{
-						char * endpoint = value;
-						SP_NKStr::strsep( &endpoint, " " );
-
-						char * port = endpoint;
-						SP_NKStr::strsep( &port, ":" );
-
-						for( ; '\0' != *endpoint && isspace( *endpoint ); ) endpoint++;
-						list->addEndPoint( endpoint, atoi( port ), 10 );
-					}
-
-					char * keyMax = value;
-					SP_NKStr::strsep( &keyMax, "-" );
-
-					int iKeyMin = atoi( value + 1 );
-					int iKeyMax = atoi( keyMax );
-
-					table->addBucket( iKeyMin, iKeyMax, list );
-				}
-			}
-		}
+		table = SP_NKEndPointTableConfig::readTable( &ini );
 	}
 
-	SP_NKMemClient * memClient = new SP_NKMemClient( table );
-	memClient->setSocketPool( socketPool );
+	SP_NKMemClient * memClient = NULL;
+
+	if( NULL != table ) {
+		memClient = new SP_NKMemClient( table );
+		memClient->setSocketPool( socketPool );
+	}
 
 	return memClient;
 }
