@@ -59,8 +59,8 @@ int SP_NKTokenWaiter :: timedwait( spnk_thread_mutex_t * mutex, int wait4ms )
 
 	tv.tv_usec += wait4ms * 1000;
 	if( tv.tv_usec > 1000000 ) {
-		tv.tv_sec++;
-		tv.tv_usec -= 1000000;
+		tv.tv_sec += tv.tv_usec / 1000000;
+		tv.tv_usec = tv.tv_usec % 1000000;
 	}
 
 	struct timespec timeout;
