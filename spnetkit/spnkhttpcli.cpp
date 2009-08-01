@@ -49,6 +49,8 @@ int SP_NKHttpProtocol :: post( SP_NKSocket * socket,
 		} else {
 			sockRet = socket->printf( "\r\n" );
 		}
+	} else {
+		SP_NKLog::log( LOG_ERR, "ERR: sendReqHeader fail" );
 	}
 
 	if( sockRet > 0 ) {
@@ -56,6 +58,8 @@ int SP_NKHttpProtocol :: post( SP_NKSocket * socket,
 		if( sockRet > 0 && SC_NOT_MODIFIED != resp->getStatusCode() ) {
 			sockRet = recvRespBody( socket, resp );
 		}
+	} else {
+		SP_NKLog::log( LOG_ERR, "ERR: sendReqBody fail" );
 	}
 
 	return sockRet > 0 ? 0 : -1;

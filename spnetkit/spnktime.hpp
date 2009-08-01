@@ -13,11 +13,17 @@ public:
 	SP_NKClock();
 	~SP_NKClock();
 
-	// @return ms
+	// @return millisecond
 	long getAge();
 
-	// @return ms
+	// @return millisecond
 	long getInterval();
+
+	// @return microsecond
+	long getAgeUsec();
+
+	// @return microsecond
+	long getIntervalUsec();
 
 private:
 	struct timeval mBornTime;

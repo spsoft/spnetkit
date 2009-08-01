@@ -79,3 +79,25 @@ long SP_NKClock :: getInterval()
 	return ret;
 }
 
+long SP_NKClock :: getAgeUsec()
+{
+	struct timeval now;
+	spnk_gettimeofday ( &now, NULL ); 
+
+	return (long)( 1000000 * ( now.tv_sec - mBornTime.tv_sec )
+			+ ( now.tv_usec - mBornTime.tv_usec ) );
+}
+
+long SP_NKClock :: getIntervalUsec()
+{
+	struct timeval now;
+	spnk_gettimeofday ( &now, NULL ); 
+
+	long ret = long( 1000000 * ( now.tv_sec - mPrevTime.tv_sec )
+			+ ( now.tv_usec - mPrevTime.tv_usec ) );
+
+	mPrevTime = now;
+
+	return ret;
+}
+
