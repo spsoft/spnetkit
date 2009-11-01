@@ -16,7 +16,7 @@ LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
 		spnkhttpmsg.o spnkhttpcli.o \
 		spnkmemobj.o spnkmemcli.o \
 		spnkicapcli.o spnkmiltercli.o \
-		spnklock.o spnkconfig.o
+		spnklock.o spnkconfig.o spnkmd5.o
 
 TARGET =  libspnetkit.so libspnetkit.a \
 		teststr \
