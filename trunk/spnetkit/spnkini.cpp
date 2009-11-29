@@ -28,6 +28,12 @@ int SP_NKIniFile :: BatchLoad( SP_NKIniFile * iniFile, SP_NKIniItemInfo_t * info
 		SP_NKIniItemInfo_t * iter = &( infoArray[i] );
 		if( NULL == iter->mSection ) break;
 
+		if( eSP_NKIniItemInt == iter->mType ) {
+			*(int*)iter->mValue = 0;
+		} else {
+			memset( (char*)iter->mValue, 0, iter->mSize );
+		}
+
 		iter->mExist = 0;
 
 		char value[ 1024 ] = { 0 };
