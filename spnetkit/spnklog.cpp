@@ -8,10 +8,13 @@
 #include <stdarg.h>
 #include <time.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include "spnkporting.hpp"
 
 #include "spnklog.hpp"
+
+#include "spnkthread.hpp"
 
 #ifdef WIN32
 
@@ -196,10 +199,197 @@ void SP_NKLog :: log( int pri, const char * fmt, ... )
 		}
 	}
 
+	//logText[ textPos++ ] = '\n';
+	//logText[ textPos++ ] = '\0';
+
+	mFunc( pri, logText );
+
+	errno = olderrno;
+}
+
+//---------------------------------------------------------------------------
+
+typedef struct tagSP_NKFileLogImpl {
+	char mLogFile[ 512 ];
+	char mLevel;
+	char mIsCont;
+
+	int  mMaxSize;
+	int  mMaxFile;
+
+	int  mFile;
+	int  mSize;
+	spnk_thread_mutex_t mMutex;
+} SP_NKFileLogImpl_t;
+
+SP_NKFileLog * SP_NKFileLog :: getDefault()
+{
+	static SP_NKFileLog defaultLog;
+
+	return &defaultLog;
+}
+
+void SP_NKFileLog :: logDefault( int level, const char * fmt, ... )
+{
+	va_list vaList;
+	va_start( vaList, fmt );
+
+	getDefault()->vlog( level, fmt, vaList );
+
+	va_end ( vaList );
+}
+
+SP_NKFileLog :: SP_NKFileLog()
+{
+	mImpl = NULL;
+}
+
+SP_NKFileLog :: ~SP_NKFileLog()
+{
+	if( NULL != mImpl ) {
+		if( mImpl->mFile >= 0 ) close( mImpl->mFile );
+		spnk_thread_mutex_destroy( &( mImpl->mMutex ) );
+
+		free( mImpl );
+		mImpl = NULL;
+	}
+}
+
+void SP_NKFileLog :: setOpts( int level, int maxSize, int maxFile )
+{
+	if( NULL != mImpl ) {
+		mImpl->mLevel = level;
+		mImpl->mMaxSize = maxSize;
+		mImpl->mMaxFile = maxFile;
+
+		if( mImpl->mMaxSize <= 0 ) mImpl->mMaxSize = 1024 * 1024;
+		if( mImpl->mMaxFile <= 0 ) mImpl->mMaxFile = 1;
+	}
+}
+
+int SP_NKFileLog :: init( const char * logFile, int isCont )
+{
+	mImpl = (SP_NKFileLogImpl_t*)calloc( sizeof( SP_NKFileLogImpl_t ), 1 );
+
+	strncpy( mImpl->mLogFile, logFile, sizeof( mImpl->mLogFile ) - 1 );
+	mImpl->mLevel = LOG_NOTICE;
+	mImpl->mIsCont = isCont;
+
+	mImpl->mMaxSize = 1024 * 1024;
+	mImpl->mMaxFile = 1;
+
+	mImpl->mFile = -1;
+	mImpl->mSize = 0;
+	spnk_thread_mutex_init( &( mImpl->mMutex ), NULL );
+
+	return 0;
+}
+
+void SP_NKFileLog :: check( SP_NKFileLogImpl_t * impl )
+{
+	if( impl->mFile < 0 && impl->mIsCont ) {
+		impl->mFile = open( impl->mLogFile, O_WRONLY | O_NONBLOCK | O_APPEND | O_CREAT,
+				S_IRUSR | S_IWUSR ) ;
+
+		if( impl->mFile >= 0 ) {
+			struct stat fileStat;
+			if( 0 == fstat( impl->mFile, &fileStat ) ) impl->mSize = fileStat.st_size;
+		}
+	}
+
+	if( impl->mFile < 0 || ( impl->mSize > impl->mMaxSize ) ) {
+		spnk_thread_mutex_lock( &( impl->mMutex ) );
+
+		if( impl->mFile >= 0 ) {
+			close( impl->mFile );
+			impl->mFile = -1;
+			impl->mSize = 0;
+		}
+
+		char newFile [ 512 ] = { 0 }, oldFile[ 512 ] = { 0 };
+
+		snprintf( oldFile, sizeof( oldFile ), "%s.%d", impl->mLogFile, impl->mMaxFile );
+		unlink( oldFile );
+
+		for( int i = impl->mMaxFile - 1; i > 0; i-- ) {
+			snprintf( oldFile, sizeof( oldFile ), "%s.%d", impl->mLogFile, i - 1 );
+			snprintf( newFile, sizeof( newFile ), "%s.%d", impl->mLogFile, i );
+			rename( oldFile, newFile );
+		}
+
+		rename( impl->mLogFile, oldFile );
+
+		impl->mFile = open( impl->mLogFile, O_WRONLY | O_NONBLOCK | O_TRUNC | O_CREAT,
+				S_IRUSR | S_IWUSR ) ;
+
+		spnk_thread_mutex_unlock( &( impl->mMutex ) );
+	}
+}
+
+void SP_NKFileLog :: log( int level, const char * fmt, ... )
+{
+	if( NULL == mImpl ) return;
+
+	if( LOG_PRI( level ) > mImpl->mLevel ) return;
+
+	va_list vaList;
+	va_start( vaList, fmt );
+
+	vlog( level, fmt, vaList );
+
+	va_end ( vaList );
+}
+
+void SP_NKFileLog :: vlog( int level, const char * fmt, va_list ap )
+{
+	if( NULL == mImpl ) return;
+
+	if( LOG_PRI( level ) > mImpl->mLevel ) return;
+
+	int olderrno = errno;
+
+	char logText[ 1024 ] = { 0 }, logTemp[ 1024 ] = { 0 };
+	const char * tempPtr = logTemp;
+
+	if( NULL != strchr( fmt, '%' ) ) {
+		vsnprintf( logTemp, sizeof( logTemp ), fmt, ap );
+	} else {
+		tempPtr = fmt;
+	}
+
+	time_t now = time( NULL );
+	struct tm tmTime;
+	localtime_r( &now, &tmTime );
+
+	snprintf( logText, sizeof( logText ),
+		"%04i-%02i-%02i %02i:%02i:%02i #%u ",
+		1900 + tmTime.tm_year, tmTime.tm_mon+1, tmTime.tm_mday,
+		tmTime.tm_hour, tmTime.tm_min, tmTime.tm_sec, (int)spnk_threadid() );
+
+	size_t textPos = strlen( logText );
+
+	for( ; textPos < ( sizeof( logText ) - 5 ) && '\0' != *tempPtr; tempPtr++ ) {
+		if( '\r' == *tempPtr ) {
+			logText[ textPos++ ] = '\\';
+			logText[ textPos++ ] = 'r';
+		} else if( '\n' == *tempPtr ) {
+			logText[ textPos++ ] = '\\';
+			logText[ textPos++ ] = 'n';
+		} else {
+			logText[ textPos++ ] = *tempPtr;
+		}
+	}
+
+	logText[ textPos++ ] = '\r';
 	logText[ textPos++ ] = '\n';
 	logText[ textPos++ ] = '\0';
 
-	mFunc( pri, logText );
+	check( mImpl );
+
+	if( mImpl->mFile >= 0 ) {
+		write( mImpl->mFile, logText, textPos - 1 );
+		mImpl->mSize += textPos;
+	}
 
 	errno = olderrno;
 }

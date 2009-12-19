@@ -6,6 +6,8 @@
 #ifndef __spnklog_hpp__
 #define __spnklog_hpp__
 
+#include <stdarg.h>
+
 /**
  * a simple wrapper for syslog, so than you can easy to
  * replace syslog by your own log function
@@ -45,6 +47,33 @@ private:
 	static int mLevel;
 	static int mIsLogTimeStamp;
 	static int mIsLogPriName;
+};
+
+typedef struct tagSP_NKFileLogImpl SP_NKFileLogImpl_t;
+
+class SP_NKFileLog {
+public:
+
+	static SP_NKFileLog * getDefault();
+	static void logDefault( int level, const char * fmt, ... );
+
+public:
+	SP_NKFileLog();
+	~SP_NKFileLog();
+
+	int init( const char * logFile, int isCont = 0 );
+
+	void setOpts( int level, int maxSize = 0, int maxFile = 0 );
+
+	void log( int level, const char * fmt, ... );
+
+	void vlog( int level, const char * fmt, va_list ap );
+
+private:
+	static void check( SP_NKFileLogImpl_t * impl );
+
+private:
+	SP_NKFileLogImpl_t * mImpl;
 };
 
 #endif
