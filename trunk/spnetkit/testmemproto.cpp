@@ -168,7 +168,7 @@ int main( int argc, char * argv[] )
 		}
 	}
 
-	SP_NKLog::setLogLevel( LOG_INFO );
+	SP_NKLog::setLogLevel( LOG_DEBUG );
 
 	printf( "Connect to %s:%d, loops %d\n", host, port, loops );
 

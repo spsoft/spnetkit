@@ -16,7 +16,9 @@
 
 int main( int argc, char * argv[] )
 {
-	SP_NKLog::init4test( "testpop3cli" );
+	SP_NKFileLog::getDefault()->init( "spnk.log", 1 );
+	SP_NKFileLog::getDefault()->setOpts( LOG_DEBUG );
+	SP_NKLog::setLogFunc( SP_NKFileLog::logDefault );
 
 	const char * from = NULL, * pass = NULL, * host = NULL;
 
