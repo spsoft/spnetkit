@@ -30,6 +30,8 @@ public:
 
 	static int setNonblocking( int fd );
 
+	static int tcpListen( const char * ip, int port, int * fd, int blocking = 1 );
+
 protected:
 	static int mLogSocketDefault;
 
