@@ -214,7 +214,7 @@ const char * SP_NKHttpRequest :: getURI() const
 	return mURI;
 }
 
-void SP_NKHttpRequest :: setClinetIP( const char * clientIP )
+void SP_NKHttpRequest :: setClientIP( const char * clientIP )
 {
 	snprintf( mClientIP, sizeof( mClientIP ), "%s", clientIP );
 }

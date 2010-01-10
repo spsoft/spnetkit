@@ -65,7 +65,7 @@ public:
 	void setURI( const char * uri );
 	const char * getURI() const;
 
-	void setClinetIP( const char * clientIP );
+	void setClientIP( const char * clientIP );
 	const char * getClientIP() const;
 
 	void addParam( const char * name, const char * value );
