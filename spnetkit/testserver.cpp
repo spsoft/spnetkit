@@ -21,6 +21,8 @@ void echoHandler( int sock, void * args )
 
 		if( socket.writen( buff, len ) != len ) break;
 	}
+
+	// not need to close fd, the framework will close it
 }
 
 int main( int argc, char * argv[] )

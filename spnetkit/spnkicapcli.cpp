@@ -15,7 +15,7 @@
 #include "spnkstr.hpp"
 #include "spnklist.hpp"
 
-#include "spnkhttpcli.hpp"
+#include "spnkhttputils.hpp"
 #include "spnkhttpmsg.hpp"
 
 const char * SP_NKIcapProtocol :: mFakeRespHdr =
@@ -71,12 +71,12 @@ int SP_NKIcapProtocol :: recvHeader( SP_NKSocket * socket, SP_NKHttpResponse * r
 {
 	static const char * thisFunc = "SP_NKIcapProtocol::recvRespHeader";
 
-	char * line = (char*)malloc( SP_NKHttpProtocol::MAX_RECV_LEN );
+	char * line = (char*)malloc( SP_NKHttpUtils::MAX_RECV_LEN );
 	assert( NULL != line );
 
 	*line = '\0';
 
-	int sockRet = socket->readline( line, SP_NKHttpProtocol::MAX_RECV_LEN );
+	int sockRet = socket->readline( line, SP_NKHttpUtils::MAX_RECV_LEN );
 	if( 0 == strncasecmp( line, "ICAP", strlen( "ICAP" ) ) ) {
 		char * pos = line;
 		char * first = SP_NKStr::strsep( &pos, " " );
@@ -95,7 +95,7 @@ int SP_NKIcapProtocol :: recvHeader( SP_NKSocket * socket, SP_NKHttpResponse * r
 	for( ; sockRet > 0 && '\0' != *line; ) {
 		*line = '\0';
 
-		sockRet = socket->readline( line, SP_NKHttpProtocol::MAX_RECV_LEN );
+		sockRet = socket->readline( line, SP_NKHttpUtils::MAX_RECV_LEN );
 		if( ( ! isspace( *line ) ) || '\0' == *line ) {
 			if( multiLine.getCount() > 0 ) {
 				char * header = multiLine.getMerge( 0, "\n" );
@@ -214,20 +214,20 @@ int SP_NKIcapProtocol :: recvPart( SP_NKSocket * socket, Part_t * part, SP_NKHtt
 {
 	int sockRet = 1;
 
-	char * buff = (char*)malloc( SP_NKHttpProtocol::MAX_RECV_LEN );
+	char * buff = (char*)malloc( SP_NKHttpUtils::MAX_RECV_LEN );
 	assert( NULL != buff );
 
 	if( 0 == part->mLen ) {
 		// read chunked, refer to rfc2616 section[19.4.6]
 	
 		for( ; sockRet > 0; ) {
-			sockRet = socket->readline( buff, SP_NKHttpProtocol::MAX_RECV_LEN );
+			sockRet = socket->readline( buff, SP_NKHttpUtils::MAX_RECV_LEN );
 			if( sockRet <= 0 ) break;
 	
 			int size = strtol( buff, NULL, 16 );
 			if( size > 0 ) {
 				for( ; size > 0; ) {
-					int readLen = SP_NKHttpProtocol::MAX_RECV_LEN;
+					int readLen = SP_NKHttpUtils::MAX_RECV_LEN;
 					readLen = size > readLen ? readLen : size;
 					sockRet = socket->readn( buff, readLen );
 					if( sockRet > 0 ) {
@@ -245,7 +245,7 @@ int SP_NKIcapProtocol :: recvPart( SP_NKSocket * socket, Part_t * part, SP_NKHtt
 		int size = part->mLen;
 
 		for( ; size > 0 && sockRet > 0; ) {
-			int readLen = SP_NKHttpProtocol::MAX_RECV_LEN;
+			int readLen = SP_NKHttpUtils::MAX_RECV_LEN;
 			readLen = size > readLen ? readLen : size;
 			sockRet = socket->readn( buff, readLen );
 			if( sockRet > 0 ) {

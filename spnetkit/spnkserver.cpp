@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include "spnkserver.hpp"
 #include "spnkstr.hpp"
@@ -120,6 +121,7 @@ static spnk_thread_result_t sp_nkserverthread( void * args )
 
 		if( fd >= 0 ) {
 			impl->mHandler( fd, impl->mArgs );
+			close( fd );
 		}
 	}
 
