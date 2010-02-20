@@ -11,6 +11,7 @@
 
 #include "spnkhttpmsg.hpp"
 #include "spnklist.hpp"
+#include "spnkbuffer.hpp"
 
 const char * SP_NKHttpMessage :: HEADER_CONTENT_LENGTH = "Content-Length";
 const char * SP_NKHttpMessage :: HEADER_CONTENT_TYPE = "Content-Type";
@@ -23,9 +24,7 @@ const char * SP_NKHttpMessage :: HEADER_SERVER = "Server";
 SP_NKHttpMessage :: SP_NKHttpMessage( int type )
 	: mType( type )
 {
-	mContent = NULL;
-	mContentLength = 0;
-	mMaxLength = 0;
+	mContent = new SP_NKStringBuffer();
 
 	mHeaderNameList = new SP_NKStringList();
 	mHeaderValueList = new SP_NKStringList();
@@ -43,7 +42,7 @@ SP_NKHttpMessage :: ~SP_NKHttpMessage()
 	delete mHeaderNameList;
 	delete mHeaderValueList;
 
-	if( NULL != mContent ) free( mContent );
+	if( NULL != mContent ) delete mContent;
 }
 
 int SP_NKHttpMessage :: getType() const
@@ -65,38 +64,34 @@ void SP_NKHttpMessage :: appendContent( const void * content, int length, int ma
 {
 	if( length <= 0 ) length = strlen( (char*)content );
 
-	int realLength = mContentLength + length;
+	int realLength = mContent->getSize() + length;
 	realLength = realLength > maxLength ? realLength : maxLength;
 
-	if( realLength > mMaxLength ) {
-		if( NULL == mContent ) {
-			mContent = malloc( realLength + 1 );
-		} else {
-			mContent = realloc( mContent, realLength + 1 );
-		}
-		mMaxLength = realLength;
-	}
+	int needSpace = realLength - mContent->getSize();
+	mContent->ensureSpace( needSpace );
 
-	memcpy( ((char*)mContent) + mContentLength, content, length );
-	mContentLength = mContentLength + length;
-
-	((char*)mContent)[ mContentLength ] = '\0';
+	mContent->append( (char*)content, length );
 }
 
 void SP_NKHttpMessage :: setContent( const void * content, int length )
 {
-	mContentLength = 0;
-	appendContent( content, length );
+	mContent->clean();
+	mContent->append( (char*)content, length );
 }
 
 const void * SP_NKHttpMessage :: getContent() const
 {
-	return mContent;
+	return mContent->getBuffer();
 }
 
 int SP_NKHttpMessage :: getContentLength() const
 {
-	return mContentLength;
+	return mContent->getSize();
+}
+
+SP_NKStringBuffer * SP_NKHttpMessage :: getContentBuffer()
+{
+	return mContent;
 }
 
 void SP_NKHttpMessage :: addHeader( const char * name, const char * value )

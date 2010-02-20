@@ -8,7 +8,7 @@ ifeq ($(origin version), undefined)
 endif
 
 LIBOBJS = spnklog.o spnkbase64.o spnkini.o spnkfile.o spnkstr.o \
-		spnktime.o spnkhash.o \
+		spnktime.o spnkhash.o spnkbuffer.o \
 		spnksocket.o spnklist.o spnkreader.o \
 		spnkendpoint.o spnksocketpool.o \
 		spnkpop3cli.o \
