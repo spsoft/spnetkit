@@ -7,6 +7,7 @@
 #define __spnkhttpmsg_hpp__
 
 class SP_NKStringList;
+class SP_NKStringBuffer;
 
 class SP_NKHttpMessage {
 public:
@@ -33,6 +34,8 @@ public:
 	const void * getContent() const;
 	int getContentLength() const;
 
+	SP_NKStringBuffer * getContentBuffer();
+
 	void addHeader( const char * name, const char * value );
 	int removeHeader( const char * name );
 	int getHeaderCount() const;
@@ -46,8 +49,7 @@ protected:
 	const int mType;
 
 	char mVersion[ 16 ];
-	void * mContent;
-	int mMaxLength, mContentLength;
+	SP_NKStringBuffer * mContent;
 
 	SP_NKStringList * mHeaderNameList, * mHeaderValueList;
 };
