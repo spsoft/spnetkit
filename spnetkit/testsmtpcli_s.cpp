@@ -14,7 +14,10 @@
 #include "spnksmtpcli.hpp"
 #include "spnksmtpaddr.hpp"
 #include "spnksocket.hpp"
+
 #include "spnksslsocket.hpp"
+#include "spnksslsmtpcli.hpp"
+
 #include "spnklog.hpp"
 
 void printList( const char * type, SP_NKSmtpAddrList * list )
@@ -23,6 +26,52 @@ void printList( const char * type, SP_NKSmtpAddrList * list )
 	for( int i = 0; i < list->getCount(); i++ ) {
 		printf( "%d : %s , %s\n", i, list->getItem(i)->getAddr(), list->getItem(i)->getErrMsg() );
 	}
+}
+
+void test465( const char * from, const char * pass, const char * to, const char * host )
+{
+	SP_NKSmtpAddrList rcptList;
+	rcptList.append( to );
+
+	char * mailData = "Subject: test\r\nFrom: spclient@21cn.com\r\nMessage-ID: <12345>\r\n"
+			"To: spsuccess@21cn.com\r\nDate:Fri, 23 Nov 2007 17:20:57 +0800\r\n\r\ntest";
+
+	SP_NKSmtpClient client( from, mailData );
+	rcptList.moveTo( client.getRcptList() );
+	client.setDomain( from );
+	client.setAuth( from, pass );
+
+	SP_NKSslSocket socket( SP_NKSslSocket::getDefaultCtx(), host, 465 );
+
+	int ret = client.send( &socket, "localhost" );
+	printf( "send = %d\n", ret );
+	printList( "rcpt", client.getRcptList() );
+	printList( "success", client.getSuccessList() );
+	printList( "retry", client.getRetryList() );
+	printList( "error", client.getErrorList() );
+}
+
+void test587( const char * from, const char * pass, const char * to, const char * host )
+{
+	SP_NKSmtpAddrList rcptList;
+	rcptList.append( to );
+
+	char * mailData = "Subject: test\r\nFrom: spclient@21cn.com\r\nMessage-ID: <12345>\r\n"
+			"To: spsuccess@21cn.com\r\nDate:Fri, 23 Nov 2007 17:20:57 +0800\r\n\r\ntest";
+
+	SP_NKSslSmtpClient client( from, mailData );
+	rcptList.moveTo( client.getRcptList() );
+	client.setDomain( from );
+	client.setAuth( from, pass );
+
+	SP_NKTcpSocket socket( host, 587 );
+
+	int ret = client.send( &socket, "localhost" );
+	printf( "send = %d\n", ret );
+	printList( "rcpt", client.getRcptList() );
+	printList( "success", client.getSuccessList() );
+	printList( "retry", client.getRetryList() );
+	printList( "error", client.getErrorList() );
 }
 
 int main( int argc, char * argv[] )
@@ -63,25 +112,9 @@ int main( int argc, char * argv[] )
 	SP_NKSocket::setLogSocketDefault( 1 );
 	SP_NKLog::setLogLevel( LOG_DEBUG );
 
-	SP_NKSmtpAddrList rcptList;
-	rcptList.append( to );
+	test465( from, pass, to, host );
 
-	char * mailData = "Subject: test\r\nFrom: spclient@21cn.com\r\nMessage-ID: <12345>\r\n"
-			"To: spsuccess@21cn.com\r\nDate:Fri, 23 Nov 2007 17:20:57 +0800\r\n\r\ntest";
-
-	SP_NKSmtpClient client( from, mailData );
-	rcptList.moveTo( client.getRcptList() );
-	client.setDomain( from );
-	client.setAuth( from, pass );
-
-	SP_NKSslSocket socket( SP_NKSslSocket::getDefaultCtx(), host, 465 );
-
-	int ret = client.send( &socket, "localhost" );
-	printf( "send = %d\n", ret );
-	printList( "rcpt", client.getRcptList() );
-	printList( "success", client.getSuccessList() );
-	printList( "retry", client.getRetryList() );
-	printList( "error", client.getErrorList() );
+	test587( from, pass, to, host );
 
 	closelog();
 

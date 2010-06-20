@@ -278,6 +278,15 @@ int SP_NKSocket :: getSocketFd()
 	return mImpl->mSocketFd;
 }
 
+int SP_NKSocket :: detachSocketFd()
+{
+	int ret = mImpl->mSocketFd;
+
+	mImpl->mSocketFd = -1;
+
+	return ret;
+}
+
 const char * SP_NKSocket :: getPeerHost()
 {
 	return mImpl->mPeerName;

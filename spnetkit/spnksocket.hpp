@@ -46,6 +46,8 @@ public:
 	// get the underlying socket file descriptor
 	int getSocketFd();
 
+	int detachSocketFd();
+
 	const char * getPeerHost();
 
 	int getPeerPort();

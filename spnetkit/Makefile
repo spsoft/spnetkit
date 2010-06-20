@@ -40,7 +40,7 @@ TARGET_S = libspnetkit_s.so libspnetkit_s.a \
 		testpop3cli_s \
 		testsmtpcli_s
 
-OPENSSL_INCL = -I/usr/include/openssl/
+OPENSSL_INCL = -I/usr/local/ssl/include/
 OPENSSL_LIB  = -L/usr/lib -lssl -lcrypto
 
 CFLAGS += $(OPENSSL_INCL)
@@ -57,10 +57,10 @@ libspnetkit.so: $(LIBOBJS)
 libspnetkit.a: $(LIBOBJS)
 	$(AR) $@ $^
 
-libspnetkit_s.so: spnksslsocket.o
+libspnetkit_s.so: spnksslsocket.o spnksslsmtpcli.o
 	$(LINKER) $(SOFLAGS) $^ -o $@
 
-libspnetkit_s.a: spnksslsocket.o
+libspnetkit_s.a: spnksslsocket.o spnksslsmtpcli.o
 	$(AR) $@ $^
 
 testini: testini.o
