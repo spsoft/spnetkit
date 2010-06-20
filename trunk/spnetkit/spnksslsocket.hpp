@@ -15,6 +15,8 @@ public:
 	SP_NKSslSocket( void * sslCtx, const char * ip, int port,
 			int connectTimeout = 0, const char * bindAddr = 0 );
 
+	SP_NKSslSocket( void * sslCtx, int fd );
+
 	~SP_NKSslSocket();
 
 	static void * getDefaultCtx();

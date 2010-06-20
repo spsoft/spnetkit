@@ -17,7 +17,7 @@ class SP_NKStringList;
 class SP_NKSmtpClient {
 public:
 	SP_NKSmtpClient( const char * from, const char * data );
-	~SP_NKSmtpClient();
+	virtual ~SP_NKSmtpClient();
 
 	SP_NKSmtpAddrList * getRcptList();
 
@@ -43,9 +43,15 @@ public:
 	SP_NKSmtpAddrList * getErrorList();
 
 private:
+
+	virtual int startTLS( SP_NKSmtpProtocol * protocol );
+
+private:
 	static void processReply( SP_NKSmtpProtocol * protocol,
 			SP_NKSmtpAddrList * rcptList, SP_NKSmtpAddrList * retryList,
 			SP_NKSmtpAddrList * errorList, const char * why );
+
+	static int isSupportStartTLS( SP_NKStringList * replyList );
 
 private:
 	const char * mFrom;
@@ -65,7 +71,7 @@ private:
 class SP_NKSmtpProtocol {
 public:
 	SP_NKSmtpProtocol( SP_NKSocket * socket, const char * domain );
-	~SP_NKSmtpProtocol();
+	virtual ~SP_NKSmtpProtocol();
 
 	int getLastReplyCode();
 	const char * getLastReply();
@@ -101,8 +107,11 @@ private:
 			SP_NKStringList * replyList = 0 );
 
 	SP_NKSocket * mSocket;
+	SP_NKSocket * mOrgSocket;
 	char mLastReply[ 512 ];
 	char mDomain[ 128 ];
+
+	friend class SP_NKSslSmtpClient;
 };
 
 #endif

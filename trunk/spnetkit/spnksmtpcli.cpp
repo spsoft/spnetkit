@@ -15,6 +15,7 @@
 
 #include "spnklist.hpp"
 #include "spnksocket.hpp"
+#include "spnksslsocket.hpp"
 #include "spnklog.hpp"
 #include "spnkbase64.hpp"
 #include "spnkstr.hpp"
@@ -94,6 +95,29 @@ void SP_NKSmtpClient :: processReply( SP_NKSmtpProtocol * protocol,
 	}
 }
 
+int SP_NKSmtpClient :: isSupportStartTLS( SP_NKStringList * replyList )
+{
+	int ret = 0;
+
+	for( int i = 0; i < replyList->getCount(); i++ ) {
+		const char * s = replyList->getItem( i );
+
+		if( 0 == strncasecmp( "STARTTLS", s + 4, 8 ) ) {
+			ret = 1;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+int SP_NKSmtpClient :: startTLS( SP_NKSmtpProtocol * protocol )
+{
+	// unimplement
+
+	return 1;
+}
+
 int SP_NKSmtpClient :: send( const char * ip, int port, const char * heloArg )
 {
 	static const char * thisFunc = "SP_NKSmtpClient::send";
@@ -143,7 +167,18 @@ int SP_NKSmtpClient :: send( SP_NKSocket * socket, const char * heloArg )
 
 	if( 0 == ret && protocol.isPositiveCompletionReply() ) {
 		if( '\0' != mUsername[0] && '\0' != mPassword[0] ) {
-			ret = protocol.ehlo( heloArg );
+			SP_NKStringList replyList;
+			ret = protocol.ehlo( heloArg, &replyList );
+
+			if( 0 == ret && isSupportStartTLS( &replyList ) ) {
+				ret = startTLS( &protocol );
+				if( 0 == ret ) {
+					ret = protocol.ehlo( heloArg );
+				} else if( 1 == ret ) {
+					// unimplement, treat as no error
+					ret = 0;
+				}
+			}
 		} else {
 			ret = protocol.helo( heloArg );
 		}
@@ -278,13 +313,18 @@ SP_NKSmtpAddrList * SP_NKSmtpClient :: getErrorList()
 
 SP_NKSmtpProtocol :: SP_NKSmtpProtocol( SP_NKSocket * socket, const char * domain )
 {
-	mSocket = socket;
+	mSocket = mOrgSocket = socket;
 	memset( mLastReply, 0, sizeof( mLastReply ) );
 	snprintf( mDomain, sizeof( mDomain ), "%s", domain );
 }
 
 SP_NKSmtpProtocol :: ~SP_NKSmtpProtocol()
 {
+	if( mSocket != mOrgSocket )
+	{
+		mSocket->detachSocketFd();
+		delete mSocket;
+	}
 }
 
 int SP_NKSmtpProtocol :: getLastReplyCode()

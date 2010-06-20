@@ -81,6 +81,34 @@ SP_NKSslSocket :: SP_NKSslSocket( void * sslCtx, const char * ip, int port,
 	}
 }
 
+SP_NKSslSocket :: SP_NKSslSocket( void * sslCtx, int fd )
+{
+	if( NULL == sslCtx ) sslCtx = getDefaultCtx();
+
+	mCtx = sslCtx;
+	mSsl = SSL_new( (SSL_CTX*)mCtx );
+
+	SSL_set_fd( (SSL*)mSsl, fd );
+
+	int flags = fcntl( fd, F_GETFL );
+	flags &= ~O_NONBLOCK;
+	fcntl( fd, F_SETFL, flags );
+
+	int ret = SSL_connect( (SSL*)mSsl );
+
+	flags |= O_NONBLOCK;
+	fcntl( fd, F_SETFL, flags );
+
+	if( ret > 0 ) {
+		init( fd, 1 );
+	} else {
+		char errmsg[ 256 ] = { 0 };
+		ERR_error_string_n( ERR_get_error(), errmsg, sizeof( errmsg ) );
+		SP_NKLog::log( LOG_WARNING, "SSL_connect() = %d, error %s", ret, errmsg );
+		::close( fd );
+	}
+}
+
 SP_NKSslSocket :: ~SP_NKSslSocket()
 {
 	if( NULL != mSsl ) {
