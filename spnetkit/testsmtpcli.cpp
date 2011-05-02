@@ -70,7 +70,7 @@ int main( int argc, char * argv[] )
 	SP_NKSmtpAddrList rcptList;
 	rcptList.append( to );
 
-	char * mailData = "Subject: test\r\nFrom: spclient@21cn.com\r\nMessage-ID: <12345>\r\n"
+	const char * mailData = "Subject: test\r\nFrom: spclient@21cn.com\r\nMessage-ID: <12345>\r\n"
 			"To: spsuccess@21cn.com\r\nDate:Fri, 23 Nov 2007 17:20:57 +0800\r\n\r\ntest";
 
 	SP_NKSmtpClient client( from, mailData );

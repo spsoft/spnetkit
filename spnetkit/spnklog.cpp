@@ -9,6 +9,8 @@
 #include <time.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "spnkporting.hpp"
 
@@ -126,7 +128,7 @@ const char * SP_NKLog :: getPriName( int pri )
 {
 	typedef struct tagPriName {
 		int mPri;
-		char * mName;
+		const char * mName;
 	}  PriName_t;
 
 	static PriName_t priNameList [ ] = {
