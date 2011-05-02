@@ -8,6 +8,8 @@
 
 #include <stdarg.h>
 
+#include "spnkporting.hpp"
+
 /**
  * a simple wrapper for syslog, so than you can easy to
  * replace syslog by your own log function
