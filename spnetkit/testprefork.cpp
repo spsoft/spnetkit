@@ -43,7 +43,7 @@ void echoHandler( int index, void * args )
 	}
 }
 
-int main( int argc, char * argv[] )
+void testManager()
 {
 	EchoArgs_t args;
 
@@ -51,8 +51,40 @@ int main( int argc, char * argv[] )
 
 	SP_NKPreforkManager manager( echoHandler, &args, 5, 1 );
 
-	manager.runForever();
-	
+	manager.run();
+
+	close( args.mFd );
+}
+
+void echoService( int sock, void * args )
+{
+	SP_NKTcpSocket socket( sock );
+
+	for( ; ; ) {
+		char buff[ 256 ] = { 0 };
+		int len = socket.read( buff, sizeof( buff ) );
+
+		if( len > 0 ) {
+			socket.writen( buff, len );
+		} else { 
+			break;
+		}
+	}
+}
+
+void testServer()
+{
+	SP_NKPreforkServer server( "", 1690, echoService, NULL );
+
+	server.runForever();
+}
+
+int main( int argc, char * argv[] )
+{
+	testManager();
+
+	testServer();
+
 	return 0;
 }
 
