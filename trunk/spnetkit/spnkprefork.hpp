@@ -17,8 +17,9 @@ public:
 	SP_NKPreforkManager( Handler_t handler, void * args, int maxProcs, int checkInterval );
 	~SP_NKPreforkManager();
 
-	int run();
+	void shutdown();
 
+	int run();
 	void runForever();
 
 private:
@@ -26,6 +27,32 @@ private:
 
 private:
 	SP_NKPreforkManagerImpl_t * mImpl;
+};
+
+typedef struct tagSP_NKPreforkServerImpl SP_NKPreforkServerImpl_t;
+
+class SP_NKPreforkServer {
+public:
+
+	typedef void ( * Service_t ) ( int sock, void * svcArgs );
+
+public:
+	SP_NKPreforkServer( const char * bindIP, int port, Service_t service, void * svcArgs );
+	~SP_NKPreforkServer();
+
+	void setPreforkArgs( int maxProcs, int checkInterval, int maxRequestsPerChild );
+
+	void shutdown();
+
+	int run();
+	void runForever();
+
+private:
+
+	static void serverHandler( int index, void * args );
+
+private:
+	SP_NKPreforkServerImpl_t * mImpl;
 };
 
 #endif
