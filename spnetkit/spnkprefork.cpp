@@ -129,6 +129,9 @@ typedef struct tagSP_NKPreforkServerImpl {
 
 	int mListenFD;
 	int mMaxRequestsPerChild;
+
+	SP_NKPreforkServer::BeginService_t mBeginService;
+	SP_NKPreforkServer::EndService_t mEndService;
 } SP_NKPreforkServerImpl_t;
 
 SP_NKPreforkServer :: SP_NKPreforkServer( const char * bindIP, int port, Service_t service, void * svcArgs )
@@ -153,6 +156,16 @@ SP_NKPreforkServer :: ~SP_NKPreforkServer()
 
 	free( mImpl );
 	mImpl = NULL;
+}
+
+void SP_NKPreforkServer :: setBeginService( BeginService_t beginService )
+{
+	mImpl->mBeginService = beginService;
+}
+
+void SP_NKPreforkServer :: setEndService( EndService_t endService )
+{
+	mImpl->mEndService = endService;
 }
 
 void SP_NKPreforkServer :: setPreforkArgs( int maxProcs, int checkInterval, int maxRequestsPerChild )
@@ -209,6 +222,11 @@ void SP_NKPreforkServer :: serverHandler( int index, void * args )
 {
 	SP_NKPreforkServerImpl_t * impl = (SP_NKPreforkServerImpl_t*)args;
 
+	if( NULL != impl->mBeginService )
+	{
+		impl->mBeginService( impl->mSvcArgs );
+	}
+
 	int maxRequestsPerChild = impl->mMaxRequestsPerChild + 1000 * index;
 
 	for( int i= 0; i < maxRequestsPerChild; i++ ) {
@@ -224,6 +242,11 @@ void SP_NKPreforkServer :: serverHandler( int index, void * args )
 			SP_NKLog::log( LOG_ERR, "accept fail, errno %d, %s",
 				errno, strerror( errno ) );
 		}
+	}
+
+	if( NULL != impl->mEndService )
+	{
+		impl->mEndService( impl->mSvcArgs );
 	}
 }
 
