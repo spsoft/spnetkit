@@ -1,5 +1,10 @@
 
-include ../port/port.mk
+ifeq "$(wildcard $(../../port) )" ""
+	include ../port/port.mk
+else
+	include ../../port/port.mk
+endif
+
 
 #--------------------------------------------------------------------
 
