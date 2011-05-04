@@ -36,9 +36,15 @@ public:
 
 	typedef void ( * Service_t ) ( int sock, void * svcArgs );
 
+	typedef void ( * BeginService_t ) ( void * svcArgs );
+	typedef void ( * EndService_t ) ( void * svcArgs );
+
 public:
 	SP_NKPreforkServer( const char * bindIP, int port, Service_t service, void * svcArgs );
 	~SP_NKPreforkServer();
+
+	void setBeginService( BeginService_t beginService );
+	void setEndService( EndService_t endService );
 
 	void setPreforkArgs( int maxProcs, int checkInterval, int maxRequestsPerChild );
 
