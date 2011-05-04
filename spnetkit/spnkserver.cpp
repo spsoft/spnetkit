@@ -144,7 +144,7 @@ int SP_NKServer :: start()
 	int ret = 0;
 	int listenFD = -1;
 
-	ret = SP_NKSocket::tcpListen( mImpl->mBindIP, mImpl->mPort, &listenFD, 0 );
+	ret = SP_NKSocket::tcpListen( mImpl->mBindIP, mImpl->mPort, &listenFD, 1 );
 
 	if( 0 == ret ) {
 		mImpl->mListenFD = listenFD;

@@ -96,10 +96,10 @@ void SP_NKPreforkManager :: runForever()
 				pid = fork();
 
 				if( 0 == pid ) {
-					SP_NKLog::log( LOG_DEBUG, "fork proc#%d %d", i, getpid() );
 					mImpl->mHandler( i, mImpl->mArgs );
 					exit( 0 );
 				} else if( pid > 0 ) {
+					SP_NKLog::log( LOG_DEBUG, "fork proc#%d %d to replace %d", i, pid, mImpl->mPidList[i] );
 					mImpl->mPidList[i] = pid;
 				} else {
 					SP_NKLog::log( LOG_ERR, "fork fail, errno %d, %s",
@@ -203,7 +203,7 @@ void SP_NKPreforkServer :: runForever()
 	int ret = 0;
 	int listenFD = -1;
 
-	ret = SP_NKSocket::tcpListen( mImpl->mBindIP, mImpl->mPort, &listenFD, 0 );
+	ret = SP_NKSocket::tcpListen( mImpl->mBindIP, mImpl->mPort, &listenFD, 1 );
 
 	if( 0 == ret ) {
 		mImpl->mListenFD = listenFD;
@@ -227,7 +227,10 @@ void SP_NKPreforkServer :: serverHandler( int index, void * args )
 		impl->mBeginService( impl->mSvcArgs );
 	}
 
-	int maxRequestsPerChild = impl->mMaxRequestsPerChild + 1000 * index;
+	int factor = impl->mMaxRequestsPerChild / 10;
+	factor = factor <= 0 ? 1 : factor;
+
+	int maxRequestsPerChild = impl->mMaxRequestsPerChild + factor * index;
 
 	for( int i= 0; i < maxRequestsPerChild; i++ ) {
 		struct sockaddr_in addr;

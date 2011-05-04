@@ -5,12 +5,14 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "spnkserver.hpp"
 #include "spnkhttpsvr.hpp"
 #include "spnklog.hpp"
 #include "spnkhttpmsg.hpp"
 #include "spnksocket.hpp"
+#include "spnkprefork.hpp"
 
 int echoHttp( const SP_NKHttpRequest * request,
 			SP_NKHttpResponse * response, void * args )
@@ -56,6 +58,14 @@ int echoHttp( const SP_NKHttpRequest * request,
 
 int main( int argc, char * argv[] )
 {
+	if( argc < 2 ) {
+		printf( "\nUsage: %s <mode>\n", argv[0] );
+		printf( "\tmode: 1 -- thread, 2 -- prefork\n\n" );
+		return -1;
+	}
+
+	int mode = atoi( argv[1] );
+
 	if( 0 != spnk_initsock() ) assert( 0 );
 
 	SP_NKSocket::setLogSocketDefault( 1 );
@@ -67,11 +77,15 @@ int main( int argc, char * argv[] )
 	args.mTimeout = 60;
 	args.mArgs = NULL;
 
-	SP_NKServer server( "", 1680, SP_NKHttpServer::cb4server, &args );
-
-	server.setMaxThreads( 2 );
-
-	server.runForever();
+	if( 1 == mode ) {
+		SP_NKServer server( "", 1680, SP_NKHttpServer::cb4server, &args );
+		server.setMaxThreads( 2 );
+		server.runForever();
+	} else {
+		SP_NKPreforkServer server( "", 1680, SP_NKHttpServer::cb4server, &args );
+		server.setPreforkArgs( 2, 1, 2 );
+		server.runForever();
+	}
 
 	return 0;
 }
