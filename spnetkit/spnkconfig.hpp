@@ -81,5 +81,29 @@ private:
 	int mMaxReqQueueSize;
 };
 
+class SP_NKPreforkServerConfig {
+public:
+	SP_NKPreforkServerConfig();
+	~SP_NKPreforkServerConfig();
+
+	// 0 : OK, -1 : Fail
+	int init( SP_NKIniFile * iniFile, const char * section );
+
+	const char * getServerIP();
+	int getServerPort();
+
+	int getSocketTimeout();
+	int getMaxProcs();
+	int getMaxRequestsPerChild();
+
+private:
+	char mServerIP[ 16 ];
+	int mServerPort;
+
+	int mSocketTimeout;
+	int mMaxProcs;
+	int mMaxRequestsPerChild;
+};
+
 #endif
 
