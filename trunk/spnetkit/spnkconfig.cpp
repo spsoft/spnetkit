@@ -302,8 +302,8 @@ int SP_NKDatabaseConfig :: init( SP_NKIniFile * iniFile, const char * section )
 	SP_NKIniItemInfo_t infoArray[] = {
 		SP_NK_INI_ITEM_STR( section, "Host", mHost ),
 		SP_NK_INI_ITEM_INT( section, "Port", mPort ),
-		SP_NK_INI_ITEM_INT( section, "Username", mUsername ),
-		SP_NK_INI_ITEM_INT( section, "Password", mPassword ),
+		SP_NK_INI_ITEM_STR( section, "Username", mUsername ),
+		SP_NK_INI_ITEM_STR( section, "Password", mPassword ),
 
 		SP_NK_INI_ITEM_END
 	};
