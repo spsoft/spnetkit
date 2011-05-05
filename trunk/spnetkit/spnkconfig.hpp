@@ -105,5 +105,25 @@ private:
 	int mMaxRequestsPerChild;
 };
 
+class SP_NKDatabaseConfig {
+public:
+	SP_NKDatabaseConfig();
+	~SP_NKDatabaseConfig();
+
+	// 0 : OK, -1 : Fail
+	int init( SP_NKIniFile * iniFile, const char * section );
+
+	const char * getHost();
+	int getPort();
+	const char * getUsername();
+	const char * getPassword();
+
+private:
+	char mHost[ 64 ];
+	int mPort;
+	char mUsername[ 64 ];
+	char mPassword[ 64 ];
+};
+
 #endif
 
