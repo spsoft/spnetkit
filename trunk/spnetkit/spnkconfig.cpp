@@ -229,3 +229,61 @@ int SP_NKServerConfig :: getMaxReqQueueSize()
 	return mMaxReqQueueSize;
 }
 
+//===================================================================
+
+SP_NKPreforkServerConfig :: SP_NKPreforkServerConfig()
+{
+}
+
+SP_NKPreforkServerConfig :: ~SP_NKPreforkServerConfig()
+{
+}
+
+int SP_NKPreforkServerConfig :: init( SP_NKIniFile * iniFile, const char * section )
+{
+	SP_NKIniItemInfo_t infoArray[] = {
+		SP_NK_INI_ITEM_STR( section, "ServerIP", mServerIP ),
+		SP_NK_INI_ITEM_INT( section, "ServerPort", mServerPort ),
+		SP_NK_INI_ITEM_INT( section, "MaxProcs", mMaxProcs ),
+		SP_NK_INI_ITEM_INT( section, "MaxRequestsPerChild", mMaxRequestsPerChild ),
+		SP_NK_INI_ITEM_INT( section, "SocketTimeout", mSocketTimeout ),
+
+		SP_NK_INI_ITEM_END
+	};
+
+	SP_NKIniFile::BatchLoad( iniFile, infoArray );
+
+	if( mMaxProcs <= 0 ) mMaxProcs = 10;
+	if( mMaxRequestsPerChild <= 0 ) mMaxRequestsPerChild = 100;
+	if( mSocketTimeout <= 0 ) mSocketTimeout = 600;
+
+	SP_NKIniFile::BatchDump( infoArray );
+
+	return 0;
+}
+
+const char * SP_NKPreforkServerConfig :: getServerIP()
+{
+	return mServerIP;
+}
+
+int SP_NKPreforkServerConfig :: getServerPort()
+{
+	return mServerPort;
+}
+
+int SP_NKPreforkServerConfig :: getSocketTimeout()
+{
+	return mSocketTimeout;
+}
+
+int SP_NKPreforkServerConfig :: getMaxProcs()
+{
+	return mMaxProcs;
+}
+
+int SP_NKPreforkServerConfig :: getMaxRequestsPerChild()
+{
+	return mMaxRequestsPerChild;
+}
+
