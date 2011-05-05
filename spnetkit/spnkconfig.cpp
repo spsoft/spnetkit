@@ -287,3 +287,51 @@ int SP_NKPreforkServerConfig :: getMaxRequestsPerChild()
 	return mMaxRequestsPerChild;
 }
 
+//===================================================================
+
+SP_NKDatabaseConfig :: SP_NKDatabaseConfig()
+{
+}
+
+SP_NKDatabaseConfig :: ~SP_NKDatabaseConfig()
+{
+}
+
+int SP_NKDatabaseConfig :: init( SP_NKIniFile * iniFile, const char * section )
+{
+	SP_NKIniItemInfo_t infoArray[] = {
+		SP_NK_INI_ITEM_STR( section, "Host", mHost ),
+		SP_NK_INI_ITEM_INT( section, "Port", mPort ),
+		SP_NK_INI_ITEM_INT( section, "Username", mUsername ),
+		SP_NK_INI_ITEM_INT( section, "Password", mPassword ),
+
+		SP_NK_INI_ITEM_END
+	};
+
+	SP_NKIniFile::BatchLoad( iniFile, infoArray );
+
+	SP_NKIniFile::BatchDump( infoArray );
+
+	return 0;
+}
+
+const char * SP_NKDatabaseConfig :: getHost()
+{
+	return mHost;
+}
+
+int SP_NKDatabaseConfig :: getPort()
+{
+	return mPort;
+}
+
+const char * SP_NKDatabaseConfig :: getUsername()
+{
+	return mUsername;
+}
+
+const char * SP_NKDatabaseConfig :: getPassword()
+{
+	return mPassword;
+}
+
