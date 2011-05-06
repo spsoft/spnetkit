@@ -117,12 +117,14 @@ public:
 	int getPort();
 	const char * getUsername();
 	const char * getPassword();
+	const char * getName();
 
 private:
 	char mHost[ 64 ];
 	int mPort;
 	char mUsername[ 64 ];
 	char mPassword[ 64 ];
+	char mName[ 64 ];
 };
 
 #endif

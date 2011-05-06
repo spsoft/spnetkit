@@ -304,6 +304,7 @@ int SP_NKDatabaseConfig :: init( SP_NKIniFile * iniFile, const char * section )
 		SP_NK_INI_ITEM_INT( section, "Port", mPort ),
 		SP_NK_INI_ITEM_STR( section, "Username", mUsername ),
 		SP_NK_INI_ITEM_STR( section, "Password", mPassword ),
+		SP_NK_INI_ITEM_STR( section, "Name", mName ),
 
 		SP_NK_INI_ITEM_END
 	};
@@ -333,5 +334,10 @@ const char * SP_NKDatabaseConfig :: getUsername()
 const char * SP_NKDatabaseConfig :: getPassword()
 {
 	return mPassword;
+}
+
+const char * SP_NKDatabaseConfig :: getName()
+{
+	return mName;
 }
 
