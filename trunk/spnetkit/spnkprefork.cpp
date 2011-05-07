@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "spnkprefork.hpp"
 #include "spnklog.hpp"
@@ -256,5 +257,47 @@ void SP_NKPreforkServer :: serverHandler( int index, void * args )
 void SP_NKPreforkServer :: shutdown()
 {
 	kill( 0, SIGTERM );
+}
+
+//===========================================================================
+
+int SP_NKPreforkServer :: initDaemon( const char * workdir )
+{
+	pid_t	pid;
+
+	if ( (pid = fork()) < 0)
+		return (-1);
+	else if (pid)
+		_exit(0);			/* parent terminates */
+
+	/* child 1 continues... */
+
+	if (setsid() < 0)			/* become session leader */
+		return (-1);
+
+	assert( signal( SIGHUP,  SIG_IGN ) != SIG_ERR );
+	assert( signal( SIGPIPE, SIG_IGN ) != SIG_ERR );
+	assert( signal( SIGALRM, SIG_IGN ) != SIG_ERR );
+	assert( signal( SIGCHLD, SIG_IGN ) != SIG_ERR );
+
+	if ( (pid = fork()) < 0)
+		return (-1);
+	else if (pid)
+		_exit(0);			/* child 1 terminates */
+
+	/* child 2 continues... */
+
+	if( NULL != workdir ) chdir( workdir );		/* change working directory */
+
+	/* close off file descriptors */
+	for (int i = 0; i < 64; i++)
+		close(i);
+
+	/* redirect stdin, stdout, and stderr to /dev/null */
+	open("/dev/null", O_RDONLY);
+	open("/dev/null", O_RDWR);
+	open("/dev/null", O_RDWR);
+
+	return (0);				/* success */
 }
 

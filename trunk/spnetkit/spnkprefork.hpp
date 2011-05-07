@@ -40,6 +40,9 @@ public:
 	typedef void ( * AfterChildRun_t ) ( void * procArgs );
 
 public:
+	static int initDaemon( const char * workdir = 0 );
+
+public:
 	SP_NKPreforkServer( const char * bindIP, int port,
 			OnRequest_t onRequest, void * procArgs );
 	~SP_NKPreforkServer();
