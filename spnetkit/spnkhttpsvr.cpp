@@ -29,7 +29,7 @@ int SP_NKHttpServer :: dispatch( int sock, DispatchArgs_t * args )
 
 		if( sockRet > 0 ) {
 			SP_NKHttpResponse response;
-			ret = dispArgs->mHandler( &request, &response, dispArgs->mArgs );
+			ret = dispArgs->mHandler( &request, &response, dispArgs );
 
 			SP_NKHttpUtils::fixRespHeaders( &request, &response );
 			sockRet = SP_NKHttpUtils::sendResp( &socket, &response );

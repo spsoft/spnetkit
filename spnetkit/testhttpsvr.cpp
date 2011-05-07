@@ -15,7 +15,7 @@
 #include "spnkprefork.hpp"
 
 int echoHttp( const SP_NKHttpRequest * request,
-			SP_NKHttpResponse * response, void * args )
+			SP_NKHttpResponse * response, void * dispatchArgs )
 {
 	response->setStatusCode( 200 );
 	response->appendContent( "<html><head>"
