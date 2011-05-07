@@ -27,7 +27,7 @@ public:
 	// @return 0 : OK, -1 : Fail
 	static int dispatch( int fd, DispatchArgs_t * args );
 
-	static void cb4server( int fd, void * args );
+	static void cb4server( int fd, void * dispatchArgs );
 
 private:
 	SP_NKHttpServer();
