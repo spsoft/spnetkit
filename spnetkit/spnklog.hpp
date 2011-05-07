@@ -39,6 +39,8 @@ public:
 	 */
 	static void log( int pri, const char * fmt, ... );
 
+	static void vlog( int level, const char * fmt, va_list ap );
+
 	static void logErr( const char * fmt, ... );
 
 	static void logDebug( const char * fmt, ... );

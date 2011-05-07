@@ -155,6 +155,14 @@ const char * SP_NKLog :: getPriName( int pri )
 
 void SP_NKLog :: log( int pri, const char * fmt, ... )
 {
+	va_list vaList;
+	va_start( vaList, fmt );
+	vlog( pri, fmt, vaList );
+	va_end ( vaList );
+}
+
+void SP_NKLog:: vlog( int pri, const char * fmt, va_list ap )
+{
 	if( LOG_PRI( pri ) > mLevel ) return;
 
 	int olderrno = errno;
@@ -163,10 +171,7 @@ void SP_NKLog :: log( int pri, const char * fmt, ... )
 	const char * tempPtr = logTemp;
 
 	if( NULL != strchr( fmt, '%' ) ) {
-		va_list vaList;
-		va_start( vaList, fmt );
-		vsnprintf( logTemp, sizeof( logTemp ), fmt, vaList );
-		va_end ( vaList );
+		vsnprintf( logTemp, sizeof( logTemp ), fmt, ap );
 	} else {
 		tempPtr = fmt;
 	}
@@ -214,7 +219,7 @@ void SP_NKLog:: logErr( const char * fmt, ... )
 	va_list vaList;
 	va_start( vaList, fmt );
 
-	log( LOG_ERR, fmt, vaList );
+	vlog( LOG_ERR, fmt, vaList );
 
 	va_end ( vaList );
 }
@@ -224,7 +229,7 @@ void SP_NKLog:: logDebug( const char * fmt, ... )
 	va_list vaList;
 	va_start( vaList, fmt );
 
-	log( LOG_DEBUG, fmt, vaList );
+	vlog( LOG_DEBUG, fmt, vaList );
 
 	va_end ( vaList );
 
