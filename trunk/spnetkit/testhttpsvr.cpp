@@ -75,7 +75,7 @@ int main( int argc, char * argv[] )
 	SP_NKHttpServer::DispatchArgs_t args;
 	args.mHandler = echoHttp;
 	args.mTimeout = 60;
-	args.mArgs = NULL;
+	args.mReqArgs = NULL;
 
 	if( 1 == mode ) {
 		SP_NKServer server( "", 1680, SP_NKHttpServer::cb4server, &args );
