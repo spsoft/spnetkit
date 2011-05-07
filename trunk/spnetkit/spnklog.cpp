@@ -209,6 +209,27 @@ void SP_NKLog :: log( int pri, const char * fmt, ... )
 	errno = olderrno;
 }
 
+void SP_NKLog:: logErr( const char * fmt, ... )
+{
+	va_list vaList;
+	va_start( vaList, fmt );
+
+	log( LOG_ERR, fmt, vaList );
+
+	va_end ( vaList );
+}
+
+void SP_NKLog:: logDebug( const char * fmt, ... )
+{
+	va_list vaList;
+	va_start( vaList, fmt );
+
+	log( LOG_DEBUG, fmt, vaList );
+
+	va_end ( vaList );
+
+}
+
 //---------------------------------------------------------------------------
 
 typedef struct tagSP_NKFileLogImpl {
