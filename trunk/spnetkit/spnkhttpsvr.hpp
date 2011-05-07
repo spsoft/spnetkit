@@ -21,7 +21,7 @@ public:
 	typedef struct tagDispatchArgs {
 			Handler_t mHandler;
 			int mTimeout;
-			void * mArgs;
+			void * mReqArgs;
 	} DispatchArgs_t;
 
 	// @return 0 : OK, -1 : Fail
