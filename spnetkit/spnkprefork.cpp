@@ -122,26 +122,26 @@ typedef struct tagSP_NKPreforkServerImpl {
 	char mBindIP[ 64 ];
 	int mPort;
 
-	SP_NKPreforkServer::Service_t mService;
-	void * mSvcArgs;
+	SP_NKPreforkServer::OnRequest_t mOnRequest;
+	void * mProcArgs;
 	int mMaxProcs;
 	int mCheckInterval;
 
 	int mListenFD;
 	int mMaxRequestsPerChild;
 
-	SP_NKPreforkServer::BeginService_t mBeginService;
-	SP_NKPreforkServer::EndService_t mEndService;
+	SP_NKPreforkServer::BeforeChildRun_t mBeforeChildRun;
+	SP_NKPreforkServer::AfterChildRun_t mAfterChildRun;
 } SP_NKPreforkServerImpl_t;
 
-SP_NKPreforkServer :: SP_NKPreforkServer( const char * bindIP, int port, Service_t service, void * svcArgs )
+SP_NKPreforkServer :: SP_NKPreforkServer( const char * bindIP, int port, OnRequest_t onRequest, void * procArgs )
 {
 	mImpl = (SP_NKPreforkServerImpl_t*)calloc( sizeof( SP_NKPreforkServerImpl_t ), 1 );
 
 	SP_NKStr::strlcpy( mImpl->mBindIP, bindIP, sizeof( mImpl->mBindIP ) );
 	mImpl->mPort = port;
-	mImpl->mService = service;
-	mImpl->mSvcArgs = svcArgs;
+	mImpl->mOnRequest = onRequest;
+	mImpl->mProcArgs = procArgs;
 
 	mImpl->mMaxProcs = 8;
 	mImpl->mCheckInterval = 1;
@@ -158,14 +158,14 @@ SP_NKPreforkServer :: ~SP_NKPreforkServer()
 	mImpl = NULL;
 }
 
-void SP_NKPreforkServer :: setBeginService( BeginService_t beginService )
+void SP_NKPreforkServer :: setBeforeChildRun( BeforeChildRun_t beforeChildRun )
 {
-	mImpl->mBeginService = beginService;
+	mImpl->mBeforeChildRun = beforeChildRun;
 }
 
-void SP_NKPreforkServer :: setEndService( EndService_t endService )
+void SP_NKPreforkServer :: setAfterChildRun( AfterChildRun_t afterChildRun )
 {
-	mImpl->mEndService = endService;
+	mImpl->mAfterChildRun = afterChildRun;
 }
 
 void SP_NKPreforkServer :: setPreforkArgs( int maxProcs, int checkInterval, int maxRequestsPerChild )
@@ -222,9 +222,9 @@ void SP_NKPreforkServer :: serverHandler( int index, void * args )
 {
 	SP_NKPreforkServerImpl_t * impl = (SP_NKPreforkServerImpl_t*)args;
 
-	if( NULL != impl->mBeginService )
+	if( NULL != impl->mBeforeChildRun )
 	{
-		impl->mBeginService( impl->mSvcArgs );
+		impl->mBeforeChildRun( impl->mProcArgs );
 	}
 
 	int factor = impl->mMaxRequestsPerChild / 10;
@@ -239,7 +239,7 @@ void SP_NKPreforkServer :: serverHandler( int index, void * args )
 		int fd = accept( impl->mListenFD, (struct sockaddr*)&addr, &socklen );
 
 		if( fd >= 0 ) {
-			impl->mService( fd, impl->mSvcArgs );
+			impl->mOnRequest( fd, impl->mProcArgs );
 			close( fd );
 		} else {
 			SP_NKLog::log( LOG_ERR, "accept fail, errno %d, %s",
@@ -247,9 +247,9 @@ void SP_NKPreforkServer :: serverHandler( int index, void * args )
 		}
 	}
 
-	if( NULL != impl->mEndService )
+	if( NULL != impl->mAfterChildRun )
 	{
-		impl->mEndService( impl->mSvcArgs );
+		impl->mAfterChildRun( impl->mProcArgs );
 	}
 }
 

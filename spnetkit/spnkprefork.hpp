@@ -34,19 +34,21 @@ typedef struct tagSP_NKPreforkServerImpl SP_NKPreforkServerImpl_t;
 class SP_NKPreforkServer {
 public:
 
-	typedef void ( * Service_t ) ( int sock, void * svcArgs );
+	typedef void ( * OnRequest_t ) ( int sock, void * procArgs );
 
-	typedef void ( * BeginService_t ) ( void * svcArgs );
-	typedef void ( * EndService_t ) ( void * svcArgs );
+	typedef void ( * BeforeChildRun_t ) ( void * procArgs );
+	typedef void ( * AfterChildRun_t ) ( void * procArgs );
 
 public:
-	SP_NKPreforkServer( const char * bindIP, int port, Service_t service, void * svcArgs );
+	SP_NKPreforkServer( const char * bindIP, int port,
+			OnRequest_t onRequest, void * procArgs );
 	~SP_NKPreforkServer();
 
-	void setBeginService( BeginService_t beginService );
-	void setEndService( EndService_t endService );
+	void setBeforeChildRun( BeforeChildRun_t beforeChildRun );
+	void setAfterChildRun( AfterChildRun_t afterChildRun );
 
-	void setPreforkArgs( int maxProcs, int checkInterval, int maxRequestsPerChild );
+	void setPreforkArgs( int maxProcs, int checkInterval,
+			int maxRequestsPerChild );
 
 	void shutdown();
 
