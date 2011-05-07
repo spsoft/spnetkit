@@ -96,6 +96,9 @@ public:
 	int getMaxProcs();
 	int getMaxRequestsPerChild();
 
+	int getLogLevel();
+	const char * getLogPath();
+
 private:
 	char mServerIP[ 16 ];
 	int mServerPort;
@@ -103,6 +106,9 @@ private:
 	int mSocketTimeout;
 	int mMaxProcs;
 	int mMaxRequestsPerChild;
+
+	int mLogLevel;
+	char mLogPath[ 256 ];
 };
 
 class SP_NKDatabaseConfig {
