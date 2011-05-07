@@ -321,7 +321,8 @@ void SP_NKFileLog :: check( SP_NKFileLogImpl_t * impl )
 
 		rename( impl->mLogFile, oldFile );
 
-		impl->mFile = open( impl->mLogFile, O_WRONLY | O_NONBLOCK | O_TRUNC | O_CREAT,
+		impl->mFile = open( impl->mLogFile,
+				O_WRONLY | O_NONBLOCK | O_TRUNC | O_CREAT | O_APPEND,
 				S_IRUSR | S_IWUSR ) ;
 
 		spnk_thread_mutex_unlock( &( impl->mMutex ) );
