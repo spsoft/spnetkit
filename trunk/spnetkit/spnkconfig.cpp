@@ -247,6 +247,8 @@ int SP_NKPreforkServerConfig :: init( SP_NKIniFile * iniFile, const char * secti
 		SP_NK_INI_ITEM_INT( section, "MaxProcs", mMaxProcs ),
 		SP_NK_INI_ITEM_INT( section, "MaxRequestsPerChild", mMaxRequestsPerChild ),
 		SP_NK_INI_ITEM_INT( section, "SocketTimeout", mSocketTimeout ),
+		SP_NK_INI_ITEM_INT( section, "LogLevel", mLogLevel ),
+		SP_NK_INI_ITEM_STR( section, "LogPath", mLogPath ),
 
 		SP_NK_INI_ITEM_END
 	};
@@ -285,6 +287,16 @@ int SP_NKPreforkServerConfig :: getMaxProcs()
 int SP_NKPreforkServerConfig :: getMaxRequestsPerChild()
 {
 	return mMaxRequestsPerChild;
+}
+
+int SP_NKPreforkServerConfig :: getLogLevel()
+{
+	return mLogLevel;
+}
+
+const char * SP_NKPreforkServerConfig :: getLogPath()
+{
+	return mLogPath;
 }
 
 //===================================================================
