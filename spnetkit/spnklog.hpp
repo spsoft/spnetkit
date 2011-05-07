@@ -39,6 +39,10 @@ public:
 	 */
 	static void log( int pri, const char * fmt, ... );
 
+	static void logErr( const char * fmt, ... );
+
+	static void logDebug( const char * fmt, ... );
+
 private:
 	SP_NKLog();
 	~SP_NKLog();
