@@ -125,12 +125,18 @@ public:
 	const char * getPassword();
 	const char * getName();
 
+	int getConnectTimeout();
+	int getSocketTimeout();
+
 private:
 	char mHost[ 64 ];
 	int mPort;
 	char mUsername[ 64 ];
 	char mPassword[ 64 ];
 	char mName[ 64 ];
+
+	int mConnectTimeout;
+	int mSocketTimeout;
 };
 
 #endif
