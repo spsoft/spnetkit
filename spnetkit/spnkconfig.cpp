@@ -317,6 +317,8 @@ int SP_NKDatabaseConfig :: init( SP_NKIniFile * iniFile, const char * section )
 		SP_NK_INI_ITEM_STR( section, "Username", mUsername ),
 		SP_NK_INI_ITEM_STR( section, "Password", mPassword ),
 		SP_NK_INI_ITEM_STR( section, "Name", mName ),
+		SP_NK_INI_ITEM_INT( section, "ConnectTimeout", mConnectTimeout ),
+		SP_NK_INI_ITEM_INT( section, "SocketTimeout", mSocketTimeout ),
 
 		SP_NK_INI_ITEM_END
 	};
@@ -351,5 +353,15 @@ const char * SP_NKDatabaseConfig :: getPassword()
 const char * SP_NKDatabaseConfig :: getName()
 {
 	return mName;
+}
+
+int SP_NKDatabaseConfig :: getConnectTimeout()
+{
+	return mConnectTimeout;
+}
+
+int SP_NKDatabaseConfig :: getSocketTimeout()
+{
+	return mSocketTimeout;
 }
 
