@@ -318,7 +318,7 @@ void SP_NKFileLog :: check( SP_NKFileLogImpl_t * impl )
 	if( impl->mFile < 0 && impl->mIsCont ) {
 		int mode = O_WRONLY | O_APPEND | O_CREAT;
 #ifdef O_NONBLOCK		
-		mode |= O_NONBLOCK
+		mode |= O_NONBLOCK;
 #endif
 		impl->mFile = open( impl->mLogFile, mode, S_IRUSR | S_IWUSR ) ;
 
@@ -352,7 +352,7 @@ void SP_NKFileLog :: check( SP_NKFileLogImpl_t * impl )
 
 		int mode = O_WRONLY | O_APPEND | O_CREAT;
 #ifdef O_NONBLOCK		
-		mode |= O_NONBLOCK
+		mode |= O_NONBLOCK;
 #endif
 		impl->mFile = open( impl->mLogFile, mode, S_IRUSR | S_IWUSR ) ;
 
