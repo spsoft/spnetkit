@@ -89,6 +89,10 @@ SOURCE=..\spnetkit\spnkbase64.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\spnetkit\spnkbuffer.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\spnetkit\spnkendpoint.cpp
 # End Source File
 # Begin Source File
@@ -106,6 +110,10 @@ SOURCE=..\spnetkit\spnkhttpcli.cpp
 # Begin Source File
 
 SOURCE=..\spnetkit\spnkhttpmsg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\spnetkit\spnkhttputils.cpp
 # End Source File
 # Begin Source File
 
