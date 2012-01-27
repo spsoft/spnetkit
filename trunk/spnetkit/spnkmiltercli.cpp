@@ -81,10 +81,12 @@ int SP_NKMilterProtocol :: negotiate( uint32_t filterVersion,
 
 char * SP_NKMilterProtocol :: getMacroList( char cmd, Macro_t macroArray[], int * len )
 {
+	int i = 0;
+
 	SP_NKStringList list;
 	list.append( "" );   // placeholder for cmd
 
-	for( int i = 0; i < 100; i++ ) {
+	for( i = 0; i < 100; i++ ) {
 		Macro_t * iter = &(macroArray[i]);
 
 		if( NULL == iter->mName ) break;
@@ -106,7 +108,7 @@ char * SP_NKMilterProtocol :: getMacroList( char cmd, Macro_t macroArray[], int 
 
 	char * ret = list.getMerge( len, "\t" );
 
-	for( int i = 0; i < *len; i++ ) {
+	for( i = 0; i < *len; i++ ) {
 		if( '\t' == ret[i] ) ret[i] = '\0';
 	}
 

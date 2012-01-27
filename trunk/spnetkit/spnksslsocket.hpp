@@ -6,7 +6,7 @@
 #ifndef __spnksslsocket_hpp__
 #define __spnksslsocket_hpp__
 
-#include <pthread.h>
+#include "spnkthread.hpp"
 
 #include "spnksocket.hpp"
 
@@ -32,7 +32,7 @@ private:
 	void * mSsl;
 
 	static void * mDefaultCtx;
-	static pthread_mutex_t mMutex;
+	static spnk_thread_mutex_t mMutex;
 };
 
 #endif

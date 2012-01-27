@@ -358,7 +358,7 @@ void * SP_NKSortedArray :: takeItem( int index )
 
 void SP_NKSortedArray :: clean()
 {
-	return mImpl->clean();
+	mImpl->clean();
 }
 
 //=============================================================================

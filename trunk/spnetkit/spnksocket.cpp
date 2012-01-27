@@ -192,7 +192,7 @@ int SP_NKSocket :: tcpListen( const char * ip, int port, int * fd, int blocking 
 		}
 	}
 
-	if( 0 != ret && listenFd >= 0 ) ::close( listenFd );
+	if( 0 != ret && listenFd >= 0 ) ::closesocket( listenFd );
 
 	if( 0 == ret ) {
 		* fd = listenFd;
@@ -256,7 +256,7 @@ int SP_NKSocket :: close()
 
 	if( mImpl->mSocketFd >= 0 ) {
 		ret = shutdown( mImpl->mSocketFd, 2 );
-		ret = ::close( mImpl->mSocketFd );
+		ret = ::closesocket( mImpl->mSocketFd );
 		mImpl->mSocketFd = -1;
 	}
 
@@ -641,7 +641,7 @@ int SP_NKTcpSocket :: openSocket( const char * ip, int port,
 			sizeof( inAddr ), connectTimeout );
 
 	if( 0 != ret ) {
-		::close( socketFd );
+		::closesocket( socketFd );
 		socketFd = -1;
 	}
 
@@ -656,6 +656,8 @@ int SP_NKTcpSocket :: openSocket( const char * ip, int port,
 int SP_NKTcpSocket :: openSocket( const char * path,
 		const struct timeval * connectTimeout )
 {
+#ifndef WIN32
+
 	if( mLogSocketDefault ) {
 		SP_NKLog::log( LOG_DEBUG, "SP_NKTcpSocket::openSocket( %s, {%d,%d} )",
 				path, connectTimeout->tv_sec, connectTimeout->tv_usec );
@@ -680,7 +682,7 @@ int SP_NKTcpSocket :: openSocket( const char * path,
 			sizeof( unAddr ), connectTimeout );
 
 	if( 0 != ret ) {
-		::close( socketFd );
+		::closesocket( socketFd );
 		socketFd = -1;
 	}
 
@@ -690,6 +692,12 @@ int SP_NKTcpSocket :: openSocket( const char * path,
 	}
 
 	return socketFd;
+
+#else
+
+	return -1;
+
+#endif
 }
 
 int SP_NKTcpSocket :: connectNonblock( int socketFd, struct sockaddr * addr,

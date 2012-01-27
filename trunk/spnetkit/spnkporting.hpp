@@ -15,6 +15,8 @@
 #include <windows.h>
 #include <io.h>
 #include <process.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +30,12 @@ typedef int socklen_t;
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
 #define rand_r(seed) rand()
+#define S_IRUSR _S_IREAD 
+#define S_IWUSR	_S_IWRITE
+
+#define gmtime_r( _clock, _result ) \
+        ( *(_result) = *gmtime( (_clock) ), \
+          (_result) )
 
 #if _MSC_VER >= 1400
 #define localtime_r(_clock, _result) localtime_s(_result, _clock)
@@ -101,6 +109,8 @@ inline int spnk_initsock()
 
 #define SPNK_POLLIN POLLIN
 #define SPNK_POLLOUT POLLOUT
+
+#define closesocket close
 
 #endif
 
