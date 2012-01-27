@@ -93,6 +93,10 @@ SOURCE=..\spnetkit\spnkbuffer.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\spnetkit\spnkconfig.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\spnetkit\spnkendpoint.cpp
 # End Source File
 # Begin Source File
