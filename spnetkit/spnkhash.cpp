@@ -5,6 +5,8 @@
 
 #include "spnkhash.hpp"
 
+#include "spnkporting.hpp"
+
 /* The crc32 functions and data was originally written by Spencer
  * Garrett <srg@quick.com> and was gleaned from the PostgreSQL source
  * tree via the files contrib/ltree/crc32.[ch] and from FreeBSD at
@@ -78,11 +80,24 @@ static const uint32_t sp_nkcrc32tab[256] = {
   0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d,
 };
 
+#ifdef WIN32
+
+uint64_t SP_NKHash :: FNV_64_INIT = 0xcbf29ce484222325;
+uint64_t SP_NKHash :: FNV_64_PRIME = 0x100000001b3;
+
+uint32_t SP_NKHash :: FNV_32_INIT = 2166136261;
+uint32_t SP_NKHash :: FNV_32_PRIME = 16777619;
+
+#else
+
+
 uint64_t SP_NKHash :: FNV_64_INIT = 0xcbf29ce484222325LL;
 uint64_t SP_NKHash :: FNV_64_PRIME = 0x100000001b3LL;
 
 uint32_t SP_NKHash :: FNV_32_INIT = 2166136261UL;
 uint32_t SP_NKHash :: FNV_32_PRIME = 16777619;
+
+#endif
 
 uint32_t SP_NKHash :: crc32( const char * key, size_t len )
 {

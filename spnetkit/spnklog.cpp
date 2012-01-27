@@ -9,7 +9,7 @@
 #include <time.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <unistd.h>
+
 #include <sys/stat.h>
 
 #include "spnkporting.hpp"
@@ -100,7 +100,7 @@ void SP_NKLog :: setLogFunc( LogFunc_t func )
 void SP_NKLog :: setLogLevel( int level )
 {
 	mLevel = level;
-	setlogmask( LOG_UPTO( mLevel ) );
+	spnk_setlogmask( LOG_UPTO( mLevel ) );
 }
 
 void SP_NKLog :: setLogTimeStamp( int logTimeStamp )
@@ -316,8 +316,11 @@ int SP_NKFileLog :: init( const char * logFile, int isCont )
 void SP_NKFileLog :: check( SP_NKFileLogImpl_t * impl )
 {
 	if( impl->mFile < 0 && impl->mIsCont ) {
-		impl->mFile = open( impl->mLogFile, O_WRONLY | O_NONBLOCK | O_APPEND | O_CREAT,
-				S_IRUSR | S_IWUSR ) ;
+		int mode = O_WRONLY | O_APPEND | O_CREAT;
+#ifdef O_NONBLOCK		
+		mode |= O_NONBLOCK
+#endif
+		impl->mFile = open( impl->mLogFile, mode, S_IRUSR | S_IWUSR ) ;
 
 		if( impl->mFile >= 0 ) {
 			struct stat fileStat;
@@ -347,9 +350,11 @@ void SP_NKFileLog :: check( SP_NKFileLogImpl_t * impl )
 
 		rename( impl->mLogFile, oldFile );
 
-		impl->mFile = open( impl->mLogFile,
-				O_WRONLY | O_NONBLOCK | O_TRUNC | O_CREAT | O_APPEND,
-				S_IRUSR | S_IWUSR ) ;
+		int mode = O_WRONLY | O_APPEND | O_CREAT;
+#ifdef O_NONBLOCK		
+		mode |= O_NONBLOCK
+#endif
+		impl->mFile = open( impl->mLogFile, mode, S_IRUSR | S_IWUSR ) ;
 
 		spnk_thread_mutex_unlock( &( impl->mMutex ) );
 	}

@@ -65,7 +65,7 @@ int SP_NKStr :: genID( char * id, int size )
 
 	int pos = 0;
 
-	int value = random();
+	int value = rand();
 
 	for( ; value > 0 && pos < size; pos++ ) {
 		id[ pos ] = IdChars[ value % IC_LEN ];

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "spnkporting.hpp"
 #include "spnkhttputils.hpp"
 #include "spnkhttpmsg.hpp"
 
@@ -269,6 +270,7 @@ int SP_NKHttpUtils :: recvBody( SP_NKSocket * socket, SP_NKHttpMessage * msg )
 						break;
 					}
 				}
+				sockRet = socket->readline( buff, MAX_RECV_LEN );
 			} else {
 				break;
 			}
